@@ -52,15 +52,7 @@ try {
     // Calcular el mapa de PDAs por fecha para cada materia
     $subjectPdaDateMap = [];
     foreach ($subjects as $subj) {
-        $schedule = [
-            1 => $subj['mon_hours'],
-            2 => $subj['tue_hours'],
-            3 => $subj['wed_hours'],
-            4 => $subj['thu_hours'],
-            5 => $subj['fri_hours'],
-            6 => 0,
-            7 => 0
-        ];
+        $schedule = json_decode($subj['schedule'] ?? '[]', true);
         
         // Obtener detalles del ciclo escolar
         $stmtCyc = $pdo->prepare("SELECT * FROM school_cycles WHERE id = ?");
@@ -68,8 +60,11 @@ try {
         $cycDetails = $stmtCyc->fetch(PDO::FETCH_ASSOC);
         
         if ($cycDetails) {
-            // Obtener días festivos
+            // Obtener días festivos y sumarles los ocupados por actividades del cronograma de Excel
             $holidays = json_decode($cycDetails['holidays'] ?? '[]', true);
+            $startYear = (int)date('Y', strtotime($cycDetails['start_date']));
+            $excelOccupied = getExcelOccupiedDates($startYear);
+            $holidays = array_unique(array_merge($holidays, $excelOccupied));
             
             // Días hábiles
             $schoolDays = getSchoolDays($cycDetails['start_date'], $cycDetails['total_days'], $holidays);

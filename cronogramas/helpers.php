@@ -214,3 +214,84 @@ function getDayNameSpanish($dayNum) {
     ];
     return isset($days[$dayNum]) ? $days[$dayNum] : '';
 }
+
+/**
+ * Obtiene la lista de fechas ocupadas por actividades en el cronograma de Excel.
+ *
+ * @param int $startYear Año de inicio del ciclo escolar
+ * @return array Lista de fechas YYYY-MM-DD ocupadas
+ */
+function getExcelOccupiedDates($startYear) {
+    $jsonPath = __DIR__ . '/database/calendar_parsed_grid.json';
+    if (!file_exists($jsonPath)) {
+        return [];
+    }
+    
+    $grid = json_decode(file_get_contents($jsonPath), true);
+    if (empty($grid)) {
+        return [];
+    }
+    
+    $occupiedDates = [];
+    $yearMonths = ['AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+    $monthNumbers = [
+        'AGOSTO' => '08', 'SEPTIEMBRE' => '09', 'OCTUBRE' => '10', 'NOVIEMBRE' => '11', 'DICIEMBRE' => '12',
+        'ENERO' => '01', 'FEBRERO' => '02', 'MARZO' => '03', 'ABRIL' => '04', 'MAYO' => '05', 'JUNIO' => '06', 'JULIO' => '07'
+    ];
+    
+    foreach ($grid as $mGrid) {
+        foreach ($mGrid['months'] as $monthData) {
+            $monthName = mb_strtoupper(trim($monthData['month']));
+            $monthNum = $monthNumbers[$monthName] ?? '';
+            if (empty($monthNum)) continue;
+            
+            $isFirstPart = in_array($monthName, $yearMonths);
+            $calculatedYear = $isFirstPart ? $startYear : ($startYear + 1);
+            
+            $rows = $monthData['rows'];
+            if (count($rows) >= 4) {
+                $dayRow = $rows[1];
+                $pdaRow = $rows[2];
+                
+                // Mapear columna a número de día
+                $colToDayNum = [];
+                $currentCol = 0;
+                foreach ($dayRow as $i => $cell) {
+                    $colspan = $cell['colspan'] ?? 1;
+                    if ($i > 0) {
+                        $text = trim($cell['text'] ?? '');
+                        if (is_numeric($text)) {
+                            $dayNum = (int)$text;
+                            for ($c = 0; $c < $colspan; $c++) {
+                                $colToDayNum[$currentCol + $c] = $dayNum;
+                            }
+                        }
+                    }
+                    $currentCol += $colspan;
+                }
+                
+                // Buscar días ocupados en la fila del PDA
+                $currentPdaCol = 0;
+                foreach ($pdaRow as $j => $cell) {
+                    $colspan = $cell['colspan'] ?? 1;
+                    if ($j > 0) {
+                        $text = trim($cell['text'] ?? '');
+                        if (!empty($text)) {
+                            for ($c = 0; $c < $colspan; $c++) {
+                                $colIdx = $currentPdaCol + $c;
+                                if (isset($colToDayNum[$colIdx])) {
+                                    $dayNum = $colToDayNum[$colIdx];
+                                    $dayStr = $dayNum < 10 ? '0' + $dayNum : $dayNum;
+                                    $occupiedDates[] = $calculatedYear . '-' . $monthNum . '-' . $dayStr;
+                                }
+                            }
+                        }
+                    }
+                    $currentPdaCol += $colspan;
+                }
+            }
+        }
+    }
+    
+    return array_unique($occupiedDates);
+}

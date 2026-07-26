@@ -162,6 +162,10 @@ if ($subjectId) {
         if ($viewCycle) {
             // Algoritmo de cálculo
             $holidays = json_decode($viewCycle['holidays'] ?? '[]', true);
+            $startYear = (int)date('Y', strtotime($viewCycle['start_date']));
+            $excelOccupied = getExcelOccupiedDates($startYear);
+            $holidays = array_unique(array_merge($holidays, $excelOccupied));
+            
             $schoolDays = getSchoolDays($viewCycle['start_date'], $viewCycle['total_days'], $holidays);
             
             $schedule = json_decode($viewSubject['schedule'] ?? '[]', true);
