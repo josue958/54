@@ -2,100 +2,91 @@
 /**
  * cronograma_excel.php
  * Vista interactiva de la dosificación de 5 horas a partir de los datos del Excel.
+ * Muestra el cronograma en formato de tabla horizontal con celdas combinadas (fiel al Excel).
  */
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/helpers.php';
 
-// Leer datos del JSON
-$jsonPath = __DIR__ . '/database/calendar_parsed.json';
-$calendarData = [];
+// Leer datos del JSON de cuadrícula
+$jsonPath = __DIR__ . '/database/calendar_parsed_grid.json';
+$calendarGrid = [];
 if (file_exists($jsonPath)) {
-    $calendarData = json_decode(file_get_contents($jsonPath), true);
+    $calendarGrid = json_decode(file_get_contents($jsonPath), true);
 } else {
-    $error = "No se encontró el archivo de datos del cronograma. Por favor, asegúrate de que el archivo 'database/calendar_parsed.json' exista.";
+    $error = "No se encontró el archivo de datos del cronograma. Por favor, asegúrate de que el archivo 'database/calendar_parsed_grid.json' exista.";
 }
 
 // Organizar datos por momentos
 $moments = [];
-if (!empty($calendarData)) {
-    foreach ($calendarData as $monthData) {
-        $mName = $monthData['moment'];
-        if (!isset($moments[$mName])) {
-            $moments[$mName] = [];
-        }
-        $moments[$mName][] = $monthData;
+if (!empty($calendarGrid)) {
+    foreach ($calendarGrid as $mGrid) {
+        $moments[$mGrid['moment']] = $mGrid['months'];
     }
 }
 
 // Función auxiliar para determinar la clase css/estilo de un día según su actividad
-function getDayStatusStyles($pdaText) {
-    if (empty($pdaText)) {
+function getCellStyles($text) {
+    if (empty($text)) {
         return [
-            'class' => 'day-normal',
-            'label' => 'Clase Normal',
-            'style' => 'border-left: 4px solid var(--border-light);'
+            'bg' => 'var(--bg-card)',
+            'color' => 'var(--text-muted)',
+            'border' => '1px solid var(--border)'
         ];
     }
     
-    $pdaUpper = mb_strtoupper($pdaText);
+    $textUpper = mb_strtoupper($text);
     
-    if (str_contains($pdaUpper, 'CTE') || str_contains($pdaUpper, 'CONSEJO TÉCNICO')) {
+    // Consejo Técnico Escolar
+    if (str_contains($textUpper, 'CTE') || str_contains($textUpper, 'CONSEJO TÉCNICO')) {
         return [
-            'class' => 'day-cte',
-            'label' => 'Consejo Técnico',
-            'style' => 'border-left: 4px solid var(--color-dorado); background: rgba(201, 166, 70, 0.05);'
+            'bg' => 'rgba(201, 166, 70, 0.15)',
+            'color' => 'var(--color-dorado)',
+            'border' => '1px solid var(--color-dorado)'
         ];
     }
     
-    if (str_contains($pdaUpper, 'SUSPENSIÓN') || str_contains($pdaUpper, 'SUS PEN') || str_contains($pdaUpper, 'RECESO') || str_contains($pdaUpper, 'VACACIONAL') || str_contains($pdaUpper, 'VACACIONES')) {
+    // Receso Escolar / Periodos Vacacionales / Suspensiones
+    if (str_contains($textUpper, 'SUSPENSIÓN') || str_contains($textUpper, 'SUS PEN') || str_contains($textUpper, 'RECESO') || str_contains($textUpper, 'VACACIONAL') || str_contains($textUpper, 'VACACIONES')) {
         return [
-            'class' => 'day-suspension',
-            'label' => 'Inhábil / Vacaciones',
-            'style' => 'border-left: 4px solid var(--color-danger); background: rgba(239, 68, 68, 0.05);'
+            'bg' => 'rgba(239, 68, 68, 0.15)',
+            'color' => 'var(--color-danger)',
+            'border' => '1px solid var(--color-danger)'
         ];
     }
     
-    if (str_contains($pdaUpper, 'CALIFICACIONES') || str_contains($pdaUpper, 'BOLETAS') || str_contains($pdaUpper, 'REGISTRO')) {
+    // Evaluaciones, calificaciones o entrega de boletas
+    if (str_contains($textUpper, 'CALIFICACIONES') || str_contains($textUpper, 'BOLETAS') || str_contains($textUpper, 'REGISTRO')) {
         return [
-            'class' => 'day-grades',
-            'label' => 'Evaluación / Calificaciones',
-            'style' => 'border-left: 4px solid var(--color-success); background: rgba(34, 197, 94, 0.05);'
+            'bg' => 'rgba(34, 197, 94, 0.15)',
+            'color' => 'var(--color-success)',
+            'border' => '1px solid var(--color-success)'
         ];
     }
     
-    if (str_contains($pdaUpper, 'DIAGNÓSTICO') || str_contains($pdaUpper, 'DIAG NÓS') || str_contains($pdaUpper, 'MEJOREDU')) {
+    // Diagnósticos Académicos
+    if (str_contains($textUpper, 'DIAGNÓSTICO') || str_contains($textUpper, 'DIAG NÓS') || str_contains($textUpper, 'MEJOREDU')) {
         return [
-            'class' => 'day-diagnostic',
-            'label' => 'Diagnóstico',
-            'style' => 'border-left: 4px solid var(--color-azul-tecnologico); background: rgba(30, 144, 255, 0.05);'
+            'bg' => 'rgba(30, 144, 255, 0.15)',
+            'color' => 'var(--color-azul-tecnologico)',
+            'border' => '1px solid var(--color-azul-tecnologico)'
         ];
     }
 
-    if (str_contains($pdaUpper, 'TALLER INTENSIVO') || str_contains($pdaUpper, 'TALLER  INTENSI')) {
+    // Talleres Docentes
+    if (str_contains($textUpper, 'TALLER INTENSIVO') || str_contains($textUpper, 'TALLER  INTENSI')) {
         return [
-            'class' => 'day-workshop',
-            'label' => 'Taller Docente',
-            'style' => 'border-left: 4px solid var(--color-info); background: rgba(59, 130, 246, 0.05);'
+            'bg' => 'rgba(59, 130, 246, 0.15)',
+            'color' => 'var(--color-info)',
+            'border' => '1px solid var(--color-info)'
         ];
     }
 
-    // Default event style
+    // Cualquier otra festividad o actividad especial
     return [
-        'class' => 'day-event',
-        'label' => 'Actividad Especial',
-        'style' => 'border-left: 4px solid var(--color-warning); background: rgba(245, 158, 11, 0.05);'
+        'bg' => 'rgba(245, 158, 11, 0.15)',
+        'color' => 'var(--color-warning)',
+        'border' => '1px solid var(--color-warning)'
     ];
-}
-
-// Convertir las letras de días de semana de Excel a nombres completos en español
-function getWeekdayLabel($letter) {
-    switch ($letter) {
-        case 'L': return 'Lunes';
-        case 'M': return 'Martes / Miércoles';
-        case 'J': return 'Jueves';
-        case 'V': return 'Viernes';
-        default: return $letter;
-    }
 }
 ?>
 <!DOCTYPE html>
@@ -106,7 +97,7 @@ function getWeekdayLabel($letter) {
     <title>JOKARHE CORE — Cronograma 5 HS (Excel)</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Estilos adicionales para los tabs y el calendario dinámico */
+        /* Pestañas de Navegación del Cronograma */
         .tabs-header {
             display: flex;
             gap: 12px;
@@ -145,75 +136,76 @@ function getWeekdayLabel($letter) {
             display: block;
         }
 
-        .months-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 20px;
-        }
-
-        .month-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
+        /* Contenedor con Scroll Horizontal de las tablas */
+        .table-scroll-container {
+            overflow-x: auto;
+            max-width: 100%;
             border-radius: var(--radius-lg);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            max-height: 480px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
         }
 
-        .month-header {
-            background: var(--bg-elevated);
-            padding: 14px 18px;
-            font-family: var(--font-display);
-            font-weight: 800;
-            border-bottom: 1px solid var(--border);
-            color: var(--color-azul-tecnologico);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .month-body {
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .day-row {
-            display: flex;
-            align-items: center;
-            padding: 10px 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            font-size: 13px;
-            transition: background var(--transition);
-        }
-
-        .day-row:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .day-num-box {
-            width: 32px;
-            font-weight: 800;
-            font-size: 14px;
-            color: var(--text-primary);
-        }
-
-        .day-weekday-box {
-            width: 110px;
-            color: var(--text-secondary);
+        /* Tabla Estilo Excel */
+        .excel-table {
+            width: 100%;
+            border-collapse: collapse;
             font-size: 11px;
+            table-layout: auto;
+        }
+
+        .excel-table th, .excel-table td {
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            text-align: center;
+            vertical-align: middle;
+            min-width: 48px;
+            max-width: 250px;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        /* Estilo de fila de encabezados y nombres de día */
+        .excel-table tr:nth-child(1) th {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            font-weight: 700;
+            font-size: 10px;
             text-transform: uppercase;
-            font-weight: 600;
         }
 
-        .day-desc-box {
-            flex: 1;
-            color: var(--text-muted);
-        }
-
-        .day-desc-box.has-event {
+        .excel-table tr:nth-child(2) th, 
+        .excel-table tr:nth-child(2) td {
+            background: rgba(255,255,255,0.02);
             color: var(--text-primary);
-            font-weight: 500;
+            font-weight: 800;
+            font-size: 13px;
+        }
+
+        /* Primera columna sticky (MES, AGOSTO, PDA, SEGUIMIENTO) */
+        .excel-table tr th:first-child,
+        .excel-table tr td:first-child {
+            width: 180px;
+            min-width: 180px;
+            max-width: 180px;
+            text-align: left;
+            font-weight: 700;
+            background: var(--bg-elevated) !important;
+            color: var(--text-primary) !important;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            border-right: 2px solid var(--border-light);
+            box-shadow: 4px 0 8px rgba(0,0,0,0.15);
+        }
+
+        /* Celdas con eventos y fusiones */
+        .excel-cell-event {
+            font-weight: 700;
+            font-size: 11px;
+            line-height: 1.4;
+            padding: 12px;
         }
 
         /* Leyendas */
@@ -246,9 +238,9 @@ function getWeekdayLabel($letter) {
         }
 
         .legend-color {
-            width: 12px;
-            height: 12px;
-            border-radius: 3px;
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
         }
     </style>
 </head>
@@ -330,28 +322,24 @@ function getWeekdayLabel($letter) {
                     <div class="legend-card">
                         <span class="legend-title">Leyenda de Días:</span>
                         <div class="legend-item">
-                            <div class="legend-color" style="background: var(--color-danger);"></div>
+                            <div class="legend-color" style="background: rgba(239, 68, 68, 0.2); border: 1px solid var(--color-danger);"></div>
                             <span>Inhábil / Vacaciones</span>
                         </div>
                         <div class="legend-item">
-                            <div class="legend-color" style="background: var(--color-dorado);"></div>
+                            <div class="legend-color" style="background: rgba(201, 166, 70, 0.2); border: 1px solid var(--color-dorado);"></div>
                             <span>Consejo Técnico (CTE)</span>
                         </div>
                         <div class="legend-item">
-                            <div class="legend-color" style="background: var(--color-success);"></div>
+                            <div class="legend-color" style="background: rgba(34, 197, 94, 0.2); border: 1px solid var(--color-success);"></div>
                             <span>Registro / Entrega Calificaciones</span>
                         </div>
                         <div class="legend-item">
-                            <div class="legend-color" style="background: var(--color-azul-tecnologico);"></div>
+                            <div class="legend-color" style="background: rgba(30, 144, 255, 0.2); border: 1px solid var(--color-azul-tecnologico);"></div>
                             <span>Diagnóstico Académico</span>
                         </div>
                         <div class="legend-item">
-                            <div class="legend-color" style="background: var(--color-info);"></div>
+                            <div class="legend-color" style="background: rgba(59, 130, 246, 0.2); border: 1px solid var(--color-info);"></div>
                             <span>Taller Docente</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: var(--border-light);"></div>
-                            <span>Día de Clase Normal</span>
                         </div>
                     </div>
 
@@ -367,30 +355,52 @@ function getWeekdayLabel($letter) {
                     <!-- Contenido de cada Momento -->
                     <?php $first = true; foreach ($moments as $mName => $monthsList): ?>
                         <div id="<?php echo hash('sha256', $mName); ?>" class="moment-content <?php echo $first ? 'active' : ''; ?>">
-                            <div class="months-grid">
-                                <?php foreach ($monthsList as $monthData): ?>
-                                    <div class="month-card">
-                                        <div class="month-header">
-                                            <span><?php echo htmlspecialchars($monthData['month']); ?></span>
-                                            <span class="badge badge-neutral" style="font-size: 10px;"><?php echo count($monthData['days']); ?> días</span>
-                                        </div>
-                                        <div class="month-body">
-                                            <?php foreach ($monthData['days'] as $day): 
-                                                $styles = getDayStatusStyles($day['pda']);
-                                                $isSpecial = !empty($day['pda']);
-                                            ?>
-                                                <div class="day-row" style="<?php echo $styles['style']; ?>">
-                                                    <div class="day-num-box"><?php echo (int)$day['day']; ?></div>
-                                                    <div class="day-weekday-box"><?php echo htmlspecialchars(getWeekdayLabel($day['weekday'])); ?></div>
-                                                    <div class="day-desc-box <?php echo $isSpecial ? 'has-event' : ''; ?>">
-                                                        <?php echo $isSpecial ? htmlspecialchars($day['pda']) : 'Clase Normal'; ?>
-                                                    </div>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
+                            <?php foreach ($monthsList as $monthData): ?>
+                                <div class="card">
+                                    <div class="card-title">
+                                        <span>📅</span> <?php echo htmlspecialchars($monthData['month']); ?>
                                     </div>
-                                <?php endforeach; ?>
-                            </div>
+                                    
+                                    <div class="table-scroll-container">
+                                        <table class="excel-table">
+                                            <tbody>
+                                                <?php foreach ($monthData['rows'] as $rowIdx => $row): ?>
+                                                    <tr>
+                                                        <?php foreach ($row as $cell): 
+                                                            $colspanAttr = $cell['colspan'] > 1 ? ' colspan="' . $cell['colspan'] . '"' : '';
+                                                            $rowspanAttr = $cell['rowspan'] > 1 ? ' rowspan="' . $cell['rowspan'] . '"' : '';
+                                                            
+                                                            $text = $cell['text'] ?? '';
+                                                            $cleanText = preg_replace('/\s+/', ' ', trim($text));
+                                                            
+                                                            if ($cell['is_header']): ?>
+                                                                <th<?php echo $colspanAttr . $rowspanAttr; ?>>
+                                                                    <?php echo htmlspecialchars($cleanText); ?>
+                                                                </th>
+                                                            <?php else: 
+                                                                $styles = getCellStyles($text);
+                                                                $styleAttr = '';
+                                                                $classAttr = '';
+                                                                
+                                                                if ($cell['type'] === 'pda' || $cell['type'] === 'seguimiento') {
+                                                                    if (!empty($text)) {
+                                                                        $styleAttr = ' style="background: ' . $styles['bg'] . '; color: ' . $styles['color'] . '; border: ' . $styles['border'] . ';"';
+                                                                        $classAttr = ' class="excel-cell-event"';
+                                                                    }
+                                                                }
+                                                            ?>
+                                                                <td<?php echo $colspanAttr . $rowspanAttr . $styleAttr . $classAttr; ?>>
+                                                                    <?php echo htmlspecialchars($cleanText); ?>
+                                                                </td>
+                                                            <?php endif; ?>
+                                                        <?php endforeach; ?>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
                         </div>
                     <?php $first = false; endforeach; ?>
 
@@ -401,11 +411,9 @@ function getWeekdayLabel($letter) {
 
     <script>
         function switchMoment(momentId, btn) {
-            // Desactivar todos los contenidos y botones
             document.querySelectorAll('.moment-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             
-            // Activar el seleccionado
             document.getElementById(momentId).classList.add('active');
             btn.classList.add('active');
         }
