@@ -25,12 +25,20 @@ try {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         start_date TEXT NOT NULL, -- YYYY-MM-DD
+        end_date TEXT, -- YYYY-MM-DD
         total_days INTEGER NOT NULL DEFAULT 190,
         period1_days INTEGER NOT NULL DEFAULT 63,
         period2_days INTEGER NOT NULL DEFAULT 63,
         period3_days INTEGER NOT NULL DEFAULT 64,
         holidays TEXT -- JSON array of dates ['YYYY-MM-DD']
     );");
+
+    // Ejecutar migración por si la tabla ya existe
+    try {
+        $pdo->exec("ALTER TABLE school_cycles ADD COLUMN end_date TEXT;");
+    } catch (PDOException $e) {
+        // Ignorar si la columna ya existe
+    }
 
     // Crear tabla de Materias
     $pdo->exec("CREATE TABLE IF NOT EXISTS subjects (

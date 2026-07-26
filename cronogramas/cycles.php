@@ -17,13 +17,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = $_POST['id'] ?? null;
         $name = trim($_POST['name'] ?? '');
         $startDate = $_POST['start_date'] ?? '';
+        $endDate = $_POST['end_date'] ?? '';
         $totalDays = (int)($_POST['total_days'] ?? 190);
         $p1Days = (int)($_POST['period1_days'] ?? 63);
         $p2Days = (int)($_POST['period2_days'] ?? 63);
         $p3Days = (int)($_POST['period3_days'] ?? 64);
 
-        if (empty($name) || empty($startDate)) {
-            $message = "El nombre y la fecha de inicio son obligatorios.";
+        if (empty($name) || empty($startDate) || empty($endDate)) {
+            $message = "El nombre, la fecha de inicio y la fecha de fin son obligatorios.";
             $messageType = "error";
         } elseif (($p1Days + $p2Days + $p3Days) !== $totalDays) {
             $message = "La suma de los días de los periodos ($p1Days + $p2Days + $p3Days = " . ($p1Days + $p2Days + $p3Days) . ") debe ser igual al total de días del ciclo ($totalDays).";
@@ -32,15 +33,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 if ($id) {
                     // Editar ciclo existente
-                    $stmt = $pdo->prepare("UPDATE school_cycles SET name = ?, start_date = ?, total_days = ?, period1_days = ?, period2_days = ?, period3_days = ? WHERE id = ?");
-                    $stmt->execute([$name, $startDate, $totalDays, $p1Days, $p2Days, $p3Days, $id]);
+                    $stmt = $pdo->prepare("UPDATE school_cycles SET name = ?, start_date = ?, end_date = ?, total_days = ?, period1_days = ?, period2_days = ?, period3_days = ? WHERE id = ?");
+                    $stmt->execute([$name, $startDate, $endDate, $totalDays, $p1Days, $p2Days, $p3Days, $id]);
                     $message = "Ciclo escolar actualizado con éxito.";
                     $messageType = "success";
                 } else {
                     // Crear nuevo ciclo
                     // Inicializar con un array vacío de festivos
-                    $stmt = $pdo->prepare("INSERT INTO school_cycles (name, start_date, total_days, period1_days, period2_days, period3_days, holidays) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                    $stmt->execute([$name, $startDate, $totalDays, $p1Days, $p2Days, $p3Days, json_encode([])]);
+                    $stmt = $pdo->prepare("INSERT INTO school_cycles (name, start_date, end_date, total_days, period1_days, period2_days, period3_days, holidays) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$name, $startDate, $endDate, $totalDays, $p1Days, $p2Days, $p3Days, json_encode([])]);
                     $id = $pdo->lastInsertId();
                     $message = "Ciclo escolar creado con éxito. Ahora puedes configurar sus días festivos.";
                     $messageType = "success";
@@ -406,7 +407,7 @@ if ($editId) {
                                         <thead>
                                             <tr>
                                                 <th>Nombre</th>
-                                                <th>Inicio</th>
+                                                <th>Vigencia</th>
                                                 <th>Días Totales</th>
                                                 <th style="text-align: right;">Acciones</th>
                                             </tr>
@@ -415,7 +416,10 @@ if ($editId) {
                                             <?php foreach ($cycles as $c): ?>
                                                 <tr class="<?php echo ($editId == $c['id']) ? 'active-row' : ''; ?>" style="<?php echo ($editId == $c['id']) ? 'background-color: var(--bg-hover);' : ''; ?>">
                                                     <td><strong><?php echo htmlspecialchars($c['name']); ?></strong></td>
-                                                    <td><?php echo formatDateSpanish($c['start_date'], true); ?></td>
+                                                    <td>
+                                                        <div><?php echo formatDateSpanish($c['start_date'], true); ?></div>
+                                                        <div class="text-secondary" style="font-size: 11px;">al <?php echo !empty($c['end_date']) ? formatDateSpanish($c['end_date'], true) : 'No definida'; ?></div>
+                                                    </td>
                                                     <td>
                                                         <span class="badge badge-p3"><?php echo $c['total_days']; ?> días</span>
                                                     </td>
@@ -454,8 +458,13 @@ if ($editId) {
                                 </div>
 
                                 <div class="form-group" style="margin-bottom: 12px;">
-                                    <label class="form-label">Fecha de Inicio (Primer día de clases)</label>
+                                    <label class="form-label">Fecha de Inicio del Ciclo Escolar</label>
                                     <input type="date" name="start_date" class="form-control" value="<?php echo htmlspecialchars($editCycle['start_date'] ?? ''); ?>" required>
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 12px;">
+                                    <label class="form-label">Fecha de Fin del Ciclo Escolar</label>
+                                    <input type="date" name="end_date" class="form-control" value="<?php echo htmlspecialchars($editCycle['end_date'] ?? ''); ?>" required>
                                 </div>
 
                                 <div class="form-group" style="margin-bottom: 12px;">

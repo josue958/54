@@ -524,7 +524,7 @@ function getMonthWeekdaysPHP($monthName, $year) {
                                                 <span class="badge badge-p3"><?php echo $cyc['total_days']; ?> Días</span>
                                             </div>
                                             <div class="pda-dates-text" style="margin-bottom: 8px;">
-                                                Inicio: <strong><?php echo formatDateSpanish($cyc['start_date']); ?></strong>
+                                                Vigencia: <strong><?php echo formatDateSpanish($cyc['start_date']); ?></strong> al <strong><?php echo !empty($cyc['end_date']) ? formatDateSpanish($cyc['end_date']) : 'No definida'; ?></strong>
                                             </div>
                                             <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                                                 <span class="badge badge-p1" style="font-size: 9px;">P1: <?php echo $cyc['period1_days']; ?>d</span>
