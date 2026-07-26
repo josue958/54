@@ -49,6 +49,55 @@ try {
     // Obtener año de inicio por defecto
     $defaultStartYear = !empty($subjects) ? (int)date('Y', strtotime($subjects[0]['cycle_start_date'])) : 2026;
 
+    // Calcular el mapa de PDAs por fecha para cada materia
+    $subjectPdaDateMap = [];
+    foreach ($subjects as $subj) {
+        $schedule = [
+            1 => $subj['mon_hours'],
+            2 => $subj['tue_hours'],
+            3 => $subj['wed_hours'],
+            4 => $subj['thu_hours'],
+            5 => $subj['fri_hours'],
+            6 => 0,
+            7 => 0
+        ];
+        
+        // Obtener detalles del ciclo escolar
+        $stmtCyc = $pdo->prepare("SELECT * FROM school_cycles WHERE id = ?");
+        $stmtCyc->execute([$subj['cycle_id']]);
+        $cycDetails = $stmtCyc->fetch(PDO::FETCH_ASSOC);
+        
+        if ($cycDetails) {
+            // Obtener días festivos
+            $holidaysStmt = $pdo->prepare("SELECT holiday_date FROM holidays WHERE cycle_id = ?");
+            $holidaysStmt->execute([$subj['cycle_id']]);
+            $holidays = $holidaysStmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            // Días hábiles
+            $schoolDays = getSchoolDays($cycDetails['start_date'], $cycDetails['total_days'], $holidays);
+            
+            // Sesiones
+            $sessions = getSubjectSessions($schoolDays, $schedule, $cycDetails['period1_days'], $cycDetails['period2_days']);
+            
+            // Distribución de PDAs
+            $pdaDist = calculatePdaDistribution($sessions, $subj['total_pdas'], $subj['id'], $pdo);
+            
+            // Mapear fechas
+            $dateMap = [];
+            foreach ($pdaDist as $pdaItem) {
+                if (!empty($pdaItem['sessions'])) {
+                    foreach ($pdaItem['sessions'] as $sess) {
+                        $dateMap[$sess['date']] = [
+                            'pda_number' => $pdaItem['pda_number'],
+                            'topic' => $pdaItem['topic']
+                        ];
+                    }
+                }
+            }
+            $subjectPdaDateMap[$subj['id']] = $dateMap;
+        }
+    }
+
 } catch (PDOException $e) {
     $error = "Error al recuperar datos: " . $e->getMessage();
 }
@@ -395,7 +444,7 @@ function getMonthWithYear($monthName, $startYear = 2026) {
                                                         <a href="subjects.php?id=<?php echo $subj['id']; ?>" class="btn btn-secondary btn-sm" style="margin-right: 4px;">
                                                             <span>📅</span> Ver Calendario
                                                         </a>
-                                                        <button type="button" class="btn btn-primary btn-sm" onclick="showCronogramaSection(<?php echo (int)date('Y', strtotime($subj['cycle_start_date'])); ?>)">
+                                                        <button type="button" class="btn btn-primary btn-sm" onclick="showCronogramaSection(<?php echo (int)date('Y', strtotime($subj['cycle_start_date'])); ?>, <?php echo $subj['id']; ?>)">
                                                             <span>📊</span> Ver Cronograma
                                                         </button>
                                                     </td>
@@ -448,7 +497,7 @@ function getMonthWithYear($monthName, $startYear = 2026) {
                         </div>
                     </div>
                 </div>
-                
+                <div class="topbar-actions"></div>
                 <!-- SECCIÓN DE CRONOGRAMA DE EXCEL INTEGRADA -->
                 <?php if (!empty($moments)): ?>
                 <div id="cronograma-excel-section" style="display: none; margin-top: 30px;">
@@ -554,10 +603,14 @@ function getMonthWithYear($monthName, $startYear = 2026) {
             btn.classList.add('active');
         }
 
-        function showCronogramaSection(startYear) {
+        var subjectPdaDateMap = <?php echo json_encode($subjectPdaDateMap, JSON_FORCE_OBJECT); ?>;
+
+        function showCronogramaSection(startYear, subjectId) {
             var section = document.getElementById('cronograma-excel-section');
             if (section) {
                 var yearMonths = ['AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+                
+                // 1. Update month labels with correct years
                 var labels = document.querySelectorAll('.month-label');
                 labels.forEach(function(el) {
                     var baseMonth = el.getAttribute('data-month');
@@ -570,6 +623,88 @@ function getMonthWithYear($monthName, $startYear = 2026) {
                     var span = el.querySelector('span');
                     var prefix = span ? span.outerHTML + ' ' : '';
                     el.innerHTML = prefix + baseMonthTrim + ' ' + calculatedYear;
+                });
+
+                // 2. Clear and set PDA cells with names/topics from the database
+                var pdaDateMap = subjectPdaDateMap[subjectId] || {};
+                var monthNumbers = {
+                    'AGOSTO': '08', 'SEPTIEMBRE': '09', 'OCTUBRE': '10', 'NOVIEMBRE': '11', 'DICIEMBRE': '12',
+                    'ENERO': '01', 'FEBRERO': '02', 'MARZO': '03', 'ABRIL': '04', 'MAYO': '05', 'JUNIO': '06', 'JULIO': '07'
+                };
+                
+                var tables = document.querySelectorAll('.excel-table');
+                tables.forEach(function(table) {
+                    var card = table.closest('.card');
+                    var monthLabelEl = card ? card.querySelector('.month-label') : null;
+                    var monthName = monthLabelEl ? monthLabelEl.getAttribute('data-month').trim().toUpperCase() : '';
+                    var monthNum = monthNumbers[monthName];
+                    if (!monthNum) return;
+                    
+                    var isFirstPart = yearMonths.includes(monthName);
+                    var calculatedYear = isFirstPart ? startYear : (startYear + 1);
+                    
+                    var trs = table.querySelectorAll('tr');
+                    if (trs.length >= 4) {
+                        var dayThs = trs[1].querySelectorAll('th, td');
+                        var pdaTds = trs[2].querySelectorAll('th, td');
+                        
+                        // Map column to day number
+                        var colToDayNum = {};
+                        var currentCol = 0;
+                        for (var i = 0; i < dayThs.length; i++) {
+                            var colspan = parseInt(dayThs[i].getAttribute('colspan') || '1', 10);
+                            if (i > 0) {
+                                var dayNumText = dayThs[i].textContent.trim();
+                                var dayNum = parseInt(dayNumText, 10);
+                                if (!isNaN(dayNum)) {
+                                    for (var c = 0; c < colspan; c++) {
+                                        colToDayNum[currentCol + c] = dayNum;
+                                    }
+                                }
+                            }
+                            currentCol += colspan;
+                        }
+                        
+                        // Set text in PDA row cells
+                        var currentPdaCol = 0;
+                        for (var j = 0; j < pdaTds.length; j++) {
+                            var cell = pdaTds[j];
+                            var colspan = parseInt(cell.getAttribute('colspan') || '1', 10);
+                            
+                            if (j > 0) {
+                                var dayNum = colToDayNum[currentPdaCol];
+                                if (dayNum !== undefined && colspan === 1) {
+                                    var dayStr = dayNum < 10 ? '0' + dayNum : dayNum;
+                                    var dateStr = calculatedYear + '-' + monthNum + '-' + dayStr;
+                                    
+                                    var originalText = cell.getAttribute('data-original-text') || cell.textContent.trim();
+                                    if (!cell.getAttribute('data-original-text')) {
+                                        cell.setAttribute('data-original-text', originalText);
+                                    }
+                                    
+                                    if (originalText === '' || originalText.match(/^PDA\s*\d*$/i) || cell.getAttribute('data-updated') === 'true') {
+                                        if (pdaDateMap[dateStr]) {
+                                            var pdaNum = pdaDateMap[dateStr].pda_number;
+                                            var topic = pdaDateMap[dateStr].topic;
+                                            
+                                            cell.style.background = 'rgba(30, 144, 255, 0.12)';
+                                            cell.style.color = 'var(--text-primary)';
+                                            cell.style.border = '1px solid var(--border)';
+                                            cell.innerHTML = '<strong>PDA ' + pdaNum + '</strong><br><span style="font-size:9px; color:var(--text-secondary);">' + topic + '</span>';
+                                            cell.setAttribute('data-updated', 'true');
+                                        } else {
+                                            cell.style.background = '';
+                                            cell.style.color = '';
+                                            cell.innerHTML = '';
+                                            cell.setAttribute('data-updated', 'false');
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            currentPdaCol += colspan;
+                        }
+                    }
                 });
 
                 section.style.display = 'block';
