@@ -381,9 +381,12 @@ function getWeekdayLabel($letter) {
                                                         <span class="badge badge-p1"><?php echo (int)$subj['total_pdas']; ?> PDAs</span>
                                                     </td>
                                                     <td style="text-align: right;">
-                                                        <a href="subjects.php?id=<?php echo $subj['id']; ?>" class="btn btn-secondary btn-sm">
+                                                        <a href="subjects.php?id=<?php echo $subj['id']; ?>" class="btn btn-secondary btn-sm" style="margin-right: 4px;">
                                                             <span>📅</span> Ver Calendario
                                                         </a>
+                                                        <button type="button" class="btn btn-primary btn-sm" onclick="showCronogramaSection()">
+                                                            <span>📊</span> Ver Cronograma
+                                                        </button>
                                                     </td>
                                                 </tr>
                                             <?php endforeach; ?>
@@ -437,6 +440,7 @@ function getWeekdayLabel($letter) {
                 
                 <!-- SECCIÓN DE CRONOGRAMA DE EXCEL INTEGRADA -->
                 <?php if (!empty($moments)): ?>
+                <div id="cronograma-excel-section" style="display: none; margin-top: 30px;">
                     <div class="legend-card">
                         <span class="legend-title">Leyenda del Cronograma 5 HS:</span>
                         <div class="legend-item">
@@ -520,7 +524,8 @@ function getWeekdayLabel($letter) {
                                 </div>
                             <?php endforeach; ?>
                         </div>
-                    <?php $first = false; endforeach; ?>
+                     <?php $first = false; endforeach; ?>
+                </div> <!-- /cronograma-excel-section -->
                 <?php endif; ?>
             </div>
         </main>
@@ -533,6 +538,14 @@ function getWeekdayLabel($letter) {
             
             document.getElementById(momentId).classList.add('active');
             btn.classList.add('active');
+        }
+
+        function showCronogramaSection() {
+            var section = document.getElementById('cronograma-excel-section');
+            if (section) {
+                section.style.display = 'block';
+                section.scrollIntoView({ behavior: 'smooth' });
+            }
         }
     </script>
 </body>
