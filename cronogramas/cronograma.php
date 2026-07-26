@@ -178,6 +178,33 @@ function getMonthWithYear($monthName, $startYear = 2026) {
     $year = in_array($monthUpper, $yearMonths) ? $startYear : ($startYear + 1);
     return $monthName . ' ' . $year;
 }
+
+function getMonthWeekdaysPHP($monthName, $year) {
+    $monthNumbers = [
+        'AGOSTO' => 8, 'SEPTIEMBRE' => 9, 'OCTUBRE' => 10, 'NOVIEMBRE' => 11, 'DICIEMBRE' => 12,
+        'ENERO' => 1, 'FEBRERO' => 2, 'MARZO' => 3, 'ABRIL' => 4, 'MAYO' => 5, 'JUNIO' => 6, 'JULIO' => 7
+    ];
+    $monthNameUpper = mb_strtoupper(trim($monthName));
+    $mNum = $monthNumbers[$monthNameUpper] ?? null;
+    if (!$mNum) return [];
+    
+    $weekdays = [];
+    $numDays = cal_days_in_month(CAL_GREGORIAN, $mNum, $year);
+    $weekdayLetters = [
+        1 => 'L', 2 => 'M', 3 => 'M', 4 => 'J', 5 => 'V', 6 => 'S', 7 => 'D'
+    ];
+    for ($d = 1; $d <= $numDays; $d++) {
+        $date = new DateTime("$year-$mNum-$d");
+        $w = (int)$date->format('N'); // 1 (Lun) a 7 (Dom)
+        if ($w >= 1 && $w <= 5) {
+            $weekdays[] = [
+                'day' => $d,
+                'letter' => $weekdayLetters[$w]
+            ];
+        }
+    }
+    return $weekdays;
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -545,15 +572,31 @@ function getMonthWithYear($monthName, $startYear = 2026) {
                                     </div>
                                     
                                     <div class="table-scroll-container">
+                                        <?php 
+                                        $monthName = $monthData['month'];
+                                        $isFirstPart = in_array(mb_strtoupper(trim($monthName)), ['AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE']);
+                                        $calculatedYear = $isFirstPart ? $defaultStartYear : ($defaultStartYear + 1);
+                                        $dynamicWeekdays = getMonthWeekdaysPHP($monthName, $calculatedYear);
+                                        ?>
                                         <table class="excel-table">
                                             <tbody>
                                                 <?php foreach ($monthData['rows'] as $rowIdx => $row): ?>
                                                     <tr>
-                                                        <?php foreach ($row as $cell): 
+                                                        <?php foreach ($row as $cellIdx => $cell): 
                                                             $colspanAttr = $cell['colspan'] > 1 ? ' colspan="' . $cell['colspan'] . '"' : '';
                                                             $rowspanAttr = $cell['rowspan'] > 1 ? ' rowspan="' . $cell['rowspan'] . '"' : '';
                                                             
                                                             $text = $cell['text'] ?? '';
+                                                            
+                                                            // Reemplazo dinámico de día/letra según el año del ciclo
+                                                            if ($rowIdx === 0 && $cellIdx > 0) {
+                                                                $wData = $dynamicWeekdays[$cellIdx - 1] ?? null;
+                                                                $text = $wData ? $wData['letter'] : '';
+                                                            } elseif ($rowIdx === 1 && $cellIdx > 0) {
+                                                                $wData = $dynamicWeekdays[$cellIdx - 1] ?? null;
+                                                                $text = $wData ? $wData['day'] : '';
+                                                            }
+                                                            
                                                             $cleanText = preg_replace('/\s+/', ' ', trim($text));
                                                             if ($cell['type'] === 'month_name') {
                                                                 $cleanText = getMonthWithYear($cleanText, $defaultStartYear);
@@ -604,6 +647,31 @@ function getMonthWithYear($monthName, $startYear = 2026) {
             btn.classList.add('active');
         }
 
+        function getMonthWeekdaysJS(monthName, year) {
+            var monthNumbers = {
+                'AGOSTO': 7, 'SEPTIEMBRE': 8, 'OCTUBRE': 9, 'NOVIEMBRE': 10, 'DICIEMBRE': 11,
+                'ENERO': 0, 'FEBRERO': 1, 'MARZO': 2, 'ABRIL': 3, 'MAYO': 4, 'JUNIO': 5, 'JULIO': 6
+            };
+            var mNum = monthNumbers[monthName.toUpperCase()];
+            if (mNum === undefined) return [];
+            
+            var weekdays = [];
+            var weekdayLetters = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+            
+            var date = new Date(year, mNum, 1);
+            while (date.getMonth() === mNum) {
+                var dayOfWeek = date.getDay();
+                if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                    weekdays.push({
+                        day: date.getDate(),
+                        letter: weekdayLetters[dayOfWeek]
+                    });
+                }
+                date.setDate(date.getDate() + 1);
+            }
+            return weekdays;
+        }
+
         var subjectPdaDateMap = <?php echo json_encode($subjectPdaDateMap, JSON_FORCE_OBJECT); ?>;
         var subjectCustomHolidaysMap = <?php echo json_encode($subjectCustomHolidaysMap, JSON_FORCE_OBJECT); ?>;
 
@@ -652,8 +720,26 @@ function getMonthWithYear($monthName, $startYear = 2026) {
                     
                     var trs = table.querySelectorAll('tr');
                     if (trs.length >= 4) {
+                        var weekdayThs = trs[0].querySelectorAll('th, td');
                         var dayThs = trs[1].querySelectorAll('th, td');
                         var pdaTds = trs[2].querySelectorAll('th, td');
+                        
+                        // Calculate weekdays dynamically
+                        var dynamicWeekdays = getMonthWeekdaysJS(monthName, calculatedYear);
+                        
+                        // Update Row 0 (weekday letters)
+                        for (var wIdx = 1; wIdx < weekdayThs.length; wIdx++) {
+                            var cell = weekdayThs[wIdx];
+                            var wData = dynamicWeekdays[wIdx - 1];
+                            cell.textContent = wData ? wData.letter : '';
+                        }
+                        
+                        // Update Row 1 (day numbers)
+                        for (var dIdx = 1; dIdx < dayThs.length; dIdx++) {
+                            var cell = dayThs[dIdx];
+                            var wData = dynamicWeekdays[dIdx - 1];
+                            cell.textContent = wData ? wData.day : '';
+                        }
                         
                         // Map column to day number
                         var colToDayNum = {};
