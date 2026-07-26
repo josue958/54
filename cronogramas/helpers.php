@@ -18,6 +18,18 @@ function getSchoolDays($startDate, $totalDays, $holidays = []) {
     $current = new DateTime($startDate);
     $count = 0;
     
+    // Normalizar holidays a un array plano de fechas
+    $holidayDates = [];
+    if (is_array($holidays)) {
+        foreach ($holidays as $k => $v) {
+            if (is_numeric($k)) {
+                $holidayDates[] = $v;
+            } else {
+                $holidayDates[] = $k;
+            }
+        }
+    }
+    
     // Evitar bucles infinitos por parámetros inválidos
     $maxIterations = $totalDays * 4;
     $iterations = 0;
@@ -27,7 +39,7 @@ function getSchoolDays($startDate, $totalDays, $holidays = []) {
         $w = (int)$current->format('w'); // 0 = Domingo, 6 = Sábado
         $dateStr = $current->format('Y-m-d');
         
-        if ($w !== 0 && $w !== 6 && !in_array($dateStr, $holidays)) {
+        if ($w !== 0 && $w !== 6 && !in_array($dateStr, $holidayDates)) {
             $days[] = $dateStr;
             $count++;
         }

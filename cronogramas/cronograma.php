@@ -62,19 +62,38 @@ try {
         
         if ($cycDetails) {
             // Obtener días festivos y sumarles los ocupados por actividades del cronograma de Excel
-            $holidays = json_decode($cycDetails['holidays'] ?? '[]', true);
+            $holidaysRaw = json_decode($cycDetails['holidays'] ?? '[]', true);
+            
+            // Extraer fechas planas y mapear a etiquetas
+            $holidaysDates = [];
+            $holidaysMap = [];
+            if (is_array($holidaysRaw)) {
+                foreach ($holidaysRaw as $k => $v) {
+                    if (is_numeric($k)) {
+                        $holidaysDates[] = $v;
+                        $holidaysMap[$v] = 'Suspensión de labores';
+                    } else {
+                        $holidaysDates[] = $k;
+                        $holidaysMap[$k] = $v;
+                    }
+                }
+            }
             
             // Períodos inhábiles personalizados de la base de datos
             $customHolidays = getCustomHolidaysDates($cycDetails['id'], $pdo);
-            $holidays = array_unique(array_merge($holidays, $customHolidays));
-            $subjectCustomHolidaysMap[$subj['id']] = getCustomHolidaysMap($cycDetails['id'], $pdo);
+            $customHolidaysMap = getCustomHolidaysMap($cycDetails['id'], $pdo);
+            
+            // Mapear etiquetas unificadas (festivos + períodos personalizados)
+            $subjectCustomHolidaysMap[$subj['id']] = array_merge($holidaysMap, $customHolidaysMap);
             
             $startYear = (int)date('Y', strtotime($cycDetails['start_date']));
             $excelOccupied = getExcelOccupiedDates($startYear);
-            $holidays = array_unique(array_merge($holidays, $excelOccupied));
+            
+            // Unir todos los días inhábiles
+            $allHolidays = array_unique(array_merge($holidaysDates, $customHolidays, $excelOccupied));
             
             // Días hábiles
-            $schoolDays = getSchoolDays($cycDetails['start_date'], $cycDetails['total_days'], $holidays);
+            $schoolDays = getSchoolDays($cycDetails['start_date'], $cycDetails['total_days'], $allHolidays);
             
             // Sesiones
             $sessions = getSubjectSessions($schoolDays, $schedule, $cycDetails['period1_days'], $cycDetails['period2_days']);
@@ -775,15 +794,15 @@ function getMonthWeekdaysPHP($monthName, $year) {
                                         cell.setAttribute('data-original-text', originalText);
                                     }
                                     
-                                    if (originalText === '' || originalText.match(/^PDA\s*\d*$/i) || cell.getAttribute('data-updated') === 'true') {
-                                        if (customHolidaysMap[dateStr]) {
-                                            var label = customHolidaysMap[dateStr];
-                                            cell.style.background = 'rgba(239, 68, 68, 0.12)';
-                                            cell.style.color = 'var(--color-danger)';
-                                            cell.style.border = '1px solid var(--color-danger)';
-                                            cell.innerHTML = '<strong>' + label + '</strong>';
-                                            cell.setAttribute('data-updated', 'true');
-                                        } else if (pdaDateMap[dateStr]) {
+                                    if (customHolidaysMap[dateStr]) {
+                                        var label = customHolidaysMap[dateStr];
+                                        cell.style.background = 'rgba(239, 68, 68, 0.12)';
+                                        cell.style.color = 'var(--color-danger)';
+                                        cell.style.border = '1px solid var(--color-danger)';
+                                        cell.innerHTML = '<strong>' + label + '</strong>';
+                                        cell.setAttribute('data-updated', 'true');
+                                    } else if (originalText === '' || originalText.match(/^PDA\s*\d*$/i) || cell.getAttribute('data-updated') === 'true') {
+                                        if (pdaDateMap[dateStr]) {
                                             var pdaNum = pdaDateMap[dateStr].pda_number;
                                             var topic = pdaDateMap[dateStr].topic;
                                             

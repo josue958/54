@@ -57,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'add_holiday') {
         $cycleId = $_POST['cycle_id'] ?? null;
         $holidayDate = $_POST['holiday_date'] ?? '';
+        $holidayLabel = $_POST['holiday_label'] ?? 'Suspensión de labores';
 
         if ($cycleId && !empty($holidayDate)) {
             try {
@@ -67,18 +68,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if ($cycle) {
                     $holidays = json_decode($cycle['holidays'] ?? '[]', true);
-                    if (!in_array($holidayDate, $holidays)) {
-                        $holidays[] = $holidayDate;
-                        sort($holidays);
-                        
-                        $stmtUpdate = $pdo->prepare("UPDATE school_cycles SET holidays = ? WHERE id = ?");
-                        $stmtUpdate->execute([json_encode($holidays), $cycleId]);
-                        $message = "Día festivo agregado correctamente.";
-                        $messageType = "success";
-                    } else {
-                        $message = "El día festivo ya está registrado.";
-                        $messageType = "warning";
+                    
+                    // Normalizar a asociativo [fecha => etiqueta]
+                    $newHolidays = [];
+                    foreach ($holidays as $k => $v) {
+                        if (is_numeric($k)) {
+                            $newHolidays[$v] = 'Suspensión de labores';
+                        } else {
+                            $newHolidays[$k] = $v;
+                        }
                     }
+                    
+                    $newHolidays[$holidayDate] = $holidayLabel;
+                    ksort($newHolidays);
+                    
+                    $stmtUpdate = $pdo->prepare("UPDATE school_cycles SET holidays = ? WHERE id = ?");
+                    $stmtUpdate->execute([json_encode($newHolidays), $cycleId]);
+                    $message = "Día festivo agregado correctamente.";
+                    $messageType = "success";
                 }
             } catch (PDOException $e) {
                 $message = "Error al guardar festivo: " . $e->getMessage();
@@ -99,17 +106,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if ($cycle) {
                     $holidays = json_decode($cycle['holidays'] ?? '[]', true);
-                    $holidays = array_values(array_filter($holidays, function($d) use ($holidayDate) {
-                        return $d !== $holidayDate;
-                    }));
+                    
+                    // Normalizar a asociativo [fecha => etiqueta]
+                    $newHolidays = [];
+                    foreach ($holidays as $k => $v) {
+                        if (is_numeric($k)) {
+                            $newHolidays[$v] = 'Suspensión de labores';
+                        } else {
+                            $newHolidays[$k] = $v;
+                        }
+                    }
+                    
+                    unset($newHolidays[$holidayDate]);
                     
                     $stmtUpdate = $pdo->prepare("UPDATE school_cycles SET holidays = ? WHERE id = ?");
-                    $stmtUpdate->execute([json_encode($holidays), $cycleId]);
+                    $stmtUpdate->execute([json_encode($newHolidays), $cycleId]);
                     $message = "Día festivo eliminado.";
                     $messageType = "success";
                 }
             } catch (PDOException $e) {
                 $message = "Error al eliminar festivo: " . $e->getMessage();
+                $messageType = "error";
+            }
+        }
+        header("Location: cycles.php?edit_id=" . $cycleId . "&msg=" . urlencode($message) . "&msg_type=" . $messageType);
+        exit;
+    } elseif ($action === 'update_holiday_label') {
+        $cycleId = $_POST['cycle_id'] ?? null;
+        $holidayDate = $_POST['holiday_date'] ?? '';
+        $label = $_POST['label'] ?? '';
+
+        if ($cycleId && !empty($holidayDate)) {
+            try {
+                $stmt = $pdo->prepare("SELECT holidays FROM school_cycles WHERE id = ?");
+                $stmt->execute([$cycleId]);
+                $cycle = $stmt->fetch();
+
+                if ($cycle) {
+                    $holidays = json_decode($cycle['holidays'] ?? '[]', true);
+                    
+                    // Normalizar a asociativo [fecha => etiqueta]
+                    $newHolidays = [];
+                    foreach ($holidays as $k => $v) {
+                        if (is_numeric($k)) {
+                            $newHolidays[$v] = 'Suspensión de labores';
+                        } else {
+                            $newHolidays[$k] = $v;
+                        }
+                    }
+                    
+                    $newHolidays[$holidayDate] = $label;
+                    
+                    $stmtUpdate = $pdo->prepare("UPDATE school_cycles SET holidays = ? WHERE id = ?");
+                    $stmtUpdate->execute([json_encode($newHolidays), $cycleId]);
+                    $message = "Etiqueta de día festivo actualizada.";
+                    $messageType = "success";
+                }
+            } catch (PDOException $e) {
+                $message = "Error al actualizar etiqueta: " . $e->getMessage();
                 $messageType = "error";
             }
         }
@@ -127,31 +181,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $yearStart = (int)date('Y', strtotime($cycle['start_date']));
                     $yearEnd = $yearStart + 1;
                     
-                    // Lista por defecto de festivos oficiales
+                    // Lista por defecto de festivos oficiales con etiquetas
                     $defaults = [
-                        "$yearStart-09-16", // Independencia
-                        "$yearStart-11-02", // Día de Muertos
-                        "$yearStart-11-16", // Revolución
+                        "$yearStart-09-16" => "Aniversario de la Independencia",
+                        "$yearStart-11-02" => "Día de Muertos",
+                        "$yearStart-11-16" => "Aniversario de la Revolución Mexicana",
                         // Vacaciones de invierno
-                        "$yearStart-12-21", "$yearStart-12-22", "$yearStart-12-23", "$yearStart-12-24", "$yearStart-12-25",
-                        "$yearStart-12-28", "$yearStart-12-29", "$yearStart-12-30", "$yearStart-12-31", "$yearEnd-01-01",
-                        "$yearEnd-01-04", "$yearEnd-01-05", "$yearEnd-01-06", "$yearEnd-01-07", "$yearEnd-01-08",
-                        "$yearEnd-02-01", // Constitución
-                        "$yearEnd-03-15", // Natalicio Juárez
-                        // Semana Santa (aproximada marzo/abril)
-                        "$yearEnd-03-22", "$yearEnd-03-23", "$yearEnd-03-24", "$yearEnd-03-25", "$yearEnd-03-26",
-                        "$yearEnd-03-29", "$yearEnd-03-30", "$yearEnd-03-31", "$yearEnd-04-01", "$yearEnd-04-02",
-                        "$yearEnd-05-01", // Día del Trabajo
-                        "$yearEnd-05-05", // Batalla de Puebla
-                        "$yearEnd-05-15", // Día del Maestro
+                        "$yearStart-12-21" => "Receso Escolar", "$yearStart-12-22" => "Receso Escolar", "$yearStart-12-23" => "Receso Escolar", "$yearStart-12-24" => "Receso Escolar", "$yearStart-12-25" => "Receso Escolar",
+                        "$yearStart-12-28" => "Receso Escolar", "$yearStart-12-29" => "Receso Escolar", "$yearStart-12-30" => "Receso Escolar", "$yearStart-12-31" => "Receso Escolar", "$yearEnd-01-01" => "Receso Escolar",
+                        "$yearEnd-01-04" => "Receso Escolar", "$yearEnd-01-05" => "Receso Escolar", "$yearEnd-01-06" => "Receso Escolar", "$yearEnd-01-07" => "Receso Escolar", "$yearEnd-01-08" => "Receso Escolar",
+                        "$yearEnd-02-01" => "Aniversario de la Constitución",
+                        "$yearEnd-03-15" => "Benito Juárez",
+                        // Semana Santa
+                        "$yearEnd-03-22" => "Vacaciones de Semana Santa", "$yearEnd-03-23" => "Vacaciones de Semana Santa", "$yearEnd-03-24" => "Vacaciones de Semana Santa", "$yearEnd-03-25" => "Vacaciones de Semana Santa", "$yearEnd-03-26" => "Vacaciones de Semana Santa",
+                        "$yearEnd-03-29" => "Vacaciones de Semana Santa", "$yearEnd-03-30" => "Vacaciones de Semana Santa", "$yearEnd-03-31" => "Vacaciones de Semana Santa", "$yearEnd-04-01" => "Vacaciones de Semana Santa", "$yearEnd-04-02" => "Vacaciones de Semana Santa",
+                        "$yearEnd-05-01" => "Día del Trabajo",
+                        "$yearEnd-05-05" => "Batalla de Puebla",
+                        "$yearEnd-05-15" => "Día del Maestro",
                     ];
 
                     $holidays = json_decode($cycle['holidays'] ?? '[]', true);
-                    $holidays = array_unique(array_merge($holidays, $defaults));
-                    sort($holidays);
+                    
+                    // Normalizar a asociativo [fecha => etiqueta]
+                    $newHolidays = [];
+                    foreach ($holidays as $k => $v) {
+                        if (is_numeric($k)) {
+                            $newHolidays[$v] = 'Suspensión de labores';
+                        } else {
+                            $newHolidays[$k] = $v;
+                        }
+                    }
+                    
+                    foreach ($defaults as $dDate => $dLabel) {
+                        if (!isset($newHolidays[$dDate])) {
+                            $newHolidays[$dDate] = $dLabel;
+                        }
+                    }
+                    ksort($newHolidays);
 
                     $stmtUpdate = $pdo->prepare("UPDATE school_cycles SET holidays = ? WHERE id = ?");
-                    $stmtUpdate->execute([json_encode($holidays), $cycleId]);
+                    $stmtUpdate->execute([json_encode($newHolidays), $cycleId]);
                     $message = "Festivos oficiales cargados correctamente.";
                     $messageType = "success";
                 }
@@ -193,6 +262,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $messageType = "success";
             } catch (PDOException $e) {
                 $message = "Error al eliminar período: " . $e->getMessage();
+                $messageType = "error";
+            }
+        }
+        header("Location: cycles.php?edit_id=" . $cycleId . "&msg=" . urlencode($message) . "&msg_type=" . $messageType);
+        exit;
+    } elseif ($action === 'update_custom_holiday_label') {
+        $cycleId = $_POST['cycle_id'] ?? null;
+        $id = $_POST['id'] ?? null;
+        $label = $_POST['label'] ?? '';
+
+        if ($cycleId && $id && !empty($label)) {
+            try {
+                $stmt = $pdo->prepare("UPDATE custom_holidays SET label = ? WHERE id = ?");
+                $stmt->execute([$label, $id]);
+                $message = "Etiqueta del período inhábil actualizada.";
+                $messageType = "success";
+            } catch (PDOException $e) {
+                $message = "Error al actualizar etiqueta del período: " . $e->getMessage();
                 $messageType = "error";
             }
         }
@@ -412,7 +499,8 @@ if ($editId) {
                                 <form method="POST" style="display: flex; gap: 8px; margin-bottom: 16px;">
                                     <input type="hidden" name="action" value="add_holiday">
                                     <input type="hidden" name="cycle_id" value="<?php echo $editCycle['id']; ?>">
-                                    <input type="date" name="holiday_date" class="form-control" required style="padding: 6px 12px; font-size:12px;">
+                                    <input type="date" name="holiday_date" class="form-control" required style="flex: 1; padding: 6px 12px; font-size:12px;">
+                                    <input type="text" name="holiday_label" class="form-control" placeholder="Etiqueta (ej. Independencia)" required style="flex: 2; padding: 6px 12px; font-size:12px;" autocomplete="off">
                                     <button type="submit" class="btn btn-primary btn-sm">➕ Agregar</button>
                                 </form>
 
@@ -421,18 +509,45 @@ if ($editId) {
                                         <p style="font-size: 12px;">No hay días festivos registrados en este ciclo.</p>
                                     </div>
                                 <?php else: ?>
-                                    <div class="holidays-grid" style="max-height: 250px; overflow-y: auto; padding: 4px;">
-                                        <?php foreach ($holidays as $hDate): ?>
-                                            <div class="holiday-chip">
-                                                <span><?php echo formatDateSpanish($hDate, true); ?></span>
-                                                <form method="POST" style="display: inline;">
-                                                    <input type="hidden" name="action" value="remove_holiday">
-                                                    <input type="hidden" name="cycle_id" value="<?php echo $editCycle['id']; ?>">
-                                                    <input type="hidden" name="holiday_date" value="<?php echo $hDate; ?>">
-                                                    <button type="submit" class="holiday-remove">✕</button>
-                                                </form>
-                                            </div>
-                                        <?php endforeach; ?>
+                                    <div class="table-container" style="max-height: 250px; overflow-y: auto;">
+                                        <table class="data-table" style="font-size: 12px;">
+                                            <thead>
+                                                <tr>
+                                                    <th>Fecha</th>
+                                                    <th>Etiqueta</th>
+                                                    <th style="text-align: right;">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($holidays as $hDate => $hLabel): 
+                                                    if (is_numeric($hDate)) {
+                                                        $hDate = $hLabel;
+                                                        $hLabel = 'Suspensión de labores';
+                                                    }
+                                                ?>
+                                                    <tr>
+                                                        <td><?php echo formatDateSpanish($hDate, true); ?></td>
+                                                        <td>
+                                                            <form method="POST" style="display: flex; gap: 4px; align-items: center; margin: 0;">
+                                                                <input type="hidden" name="action" value="update_holiday_label">
+                                                                <input type="hidden" name="cycle_id" value="<?php echo $editCycle['id']; ?>">
+                                                                <input type="hidden" name="holiday_date" value="<?php echo $hDate; ?>">
+                                                                <input type="text" name="label" class="form-control" value="<?php echo htmlspecialchars($hLabel); ?>" required style="padding: 4px 8px; font-size:11px; margin: 0;">
+                                                                <button type="submit" class="btn btn-ghost btn-sm" style="padding: 4px 8px; font-size: 11px;" title="Guardar">💾</button>
+                                                            </form>
+                                                        </td>
+                                                        <td style="text-align: right;">
+                                                            <form method="POST" style="display: inline; margin: 0;" onsubmit="return confirm('¿Seguro que deseas eliminar este día festivo?');">
+                                                                <input type="hidden" name="action" value="remove_holiday">
+                                                                <input type="hidden" name="cycle_id" value="<?php echo $editCycle['id']; ?>">
+                                                                <input type="hidden" name="holiday_date" value="<?php echo $hDate; ?>">
+                                                                <button type="submit" class="btn btn-danger btn-sm" style="padding: 2px 6px; font-size: 10px;">✕ Eliminar</button>
+                                                            </form>
+                                                        </td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -485,9 +600,17 @@ if ($editId) {
                                                     <tr>
                                                         <td><?php echo formatDateSpanish($chRow['start_date']); ?></td>
                                                         <td><?php echo formatDateSpanish($chRow['end_date']); ?></td>
-                                                        <td><strong><?php echo htmlspecialchars($chRow['label']); ?></strong></td>
+                                                        <td>
+                                                            <form method="POST" style="display: flex; gap: 4px; align-items: center; margin: 0;">
+                                                                <input type="hidden" name="action" value="update_custom_holiday_label">
+                                                                <input type="hidden" name="cycle_id" value="<?php echo $editCycle['id']; ?>">
+                                                                <input type="hidden" name="id" value="<?php echo $chRow['id']; ?>">
+                                                                <input type="text" name="label" class="form-control" value="<?php echo htmlspecialchars($chRow['label']); ?>" required style="padding: 4px 8px; font-size:11px; margin: 0;">
+                                                                <button type="submit" class="btn btn-ghost btn-sm" style="padding: 4px 8px; font-size: 11px;" title="Guardar">💾</button>
+                                                            </form>
+                                                        </td>
                                                         <td style="text-align: right;">
-                                                            <form method="POST" style="display: inline;" onsubmit="return confirm('¿Seguro que deseas eliminar este período?');">
+                                                            <form method="POST" style="display: inline; margin: 0;" onsubmit="return confirm('¿Seguro que deseas eliminar este período?');">
                                                                 <input type="hidden" name="action" value="remove_custom_holiday">
                                                                 <input type="hidden" name="cycle_id" value="<?php echo $editCycle['id']; ?>">
                                                                 <input type="hidden" name="id" value="<?php echo $chRow['id']; ?>">
