@@ -69,9 +69,7 @@ try {
         
         if ($cycDetails) {
             // Obtener días festivos
-            $holidaysStmt = $pdo->prepare("SELECT holiday_date FROM holidays WHERE cycle_id = ?");
-            $holidaysStmt->execute([$subj['cycle_id']]);
-            $holidays = $holidaysStmt->fetchAll(PDO::FETCH_COLUMN);
+            $holidays = json_decode($cycDetails['holidays'] ?? '[]', true);
             
             // Días hábiles
             $schoolDays = getSchoolDays($cycDetails['start_date'], $cycDetails['total_days'], $holidays);
