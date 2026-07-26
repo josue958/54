@@ -161,17 +161,30 @@ if ($subjectId) {
 
         if ($viewCycle) {
             // Algoritmo de cálculo
-            $holidays = json_decode($viewCycle['holidays'] ?? '[]', true);
+            $holidaysRaw = json_decode($viewCycle['holidays'] ?? '[]', true);
+            
+            // Extraer fechas planas
+            $holidaysDates = [];
+            if (is_array($holidaysRaw)) {
+                foreach ($holidaysRaw as $k => $v) {
+                    if (is_numeric($k)) {
+                        $holidaysDates[] = $v;
+                    } else {
+                        $holidaysDates[] = $k;
+                    }
+                }
+            }
             
             // Períodos inhábiles personalizados de la base de datos
             $customHolidays = getCustomHolidaysDates($viewCycle['id'], $pdo);
-            $holidays = array_unique(array_merge($holidays, $customHolidays));
             
             $startYear = (int)date('Y', strtotime($viewCycle['start_date']));
             $excelOccupied = getExcelOccupiedDates($startYear);
-            $holidays = array_unique(array_merge($holidays, $excelOccupied));
             
-            $schoolDays = getSchoolDays($viewCycle['start_date'], $viewCycle['total_days'], $holidays);
+            // Unir todos los días inhábiles
+            $allHolidays = array_unique(array_merge($holidaysDates, $customHolidays, $excelOccupied));
+            
+            $schoolDays = getSchoolDays($viewCycle['start_date'], $viewCycle['total_days'], $allHolidays);
             
             $schedule = json_decode($viewSubject['schedule'] ?? '[]', true);
             $sessions = getSubjectSessions($schoolDays, $schedule, $viewCycle['period1_days'], $viewCycle['period2_days']);
