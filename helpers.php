@@ -1,0 +1,216 @@
+<?php
+/**
+ * helpers.php
+ * Algoritmos para cálculo de ciclo escolar, sesiones de materia y distribución de PDAs.
+ */
+
+/**
+ * Genera la lista de fechas de días hábiles de clase en el ciclo escolar.
+ * Omitiendo sábados, domingos y días festivos.
+ *
+ * @param string $startDate Fecha de inicio (YYYY-MM-DD)
+ * @param int $totalDays Días totales del ciclo (ej. 190)
+ * @param array $holidays Listado de días festivos (YYYY-MM-DD)
+ * @return array Listado de strings de fechas YYYY-MM-DD
+ */
+function getSchoolDays($startDate, $totalDays, $holidays = []) {
+    $days = [];
+    $current = new DateTime($startDate);
+    $count = 0;
+    
+    // Evitar bucles infinitos por parámetros inválidos
+    $maxIterations = $totalDays * 4;
+    $iterations = 0;
+
+    while ($count < $totalDays && $iterations < $maxIterations) {
+        $iterations++;
+        $w = (int)$current->format('w'); // 0 = Domingo, 6 = Sábado
+        $dateStr = $current->format('Y-m-d');
+        
+        if ($w !== 0 && $w !== 6 && !in_array($dateStr, $holidays)) {
+            $days[] = $dateStr;
+            $count++;
+        }
+        $current->modify('+1 day');
+    }
+    
+    return $days;
+}
+
+/**
+ * Mapea las sesiones de una asignatura basándose en los días hábiles del ciclo escolar
+ * y el horario semanal de la materia.
+ *
+ * @param array $schoolDays Fechas de días hábiles
+ * @param array $schedule Horario semanal, ej: [1 => 1, 2 => 1, 3 => 0...] (1=Lun, 5=Vie)
+ * @param int $p1Days Días del Periodo 1
+ * @param int $p2Days Días del Periodo 2
+ * @return array Sesiones de la materia
+ */
+function getSubjectSessions($schoolDays, $schedule, $p1Days, $p2Days) {
+    $sessions = [];
+    $p1EndIndex = $p1Days - 1;
+    $p2EndIndex = $p1Days + $p2Days - 1;
+
+    $sessionNumber = 1;
+    foreach ($schoolDays as $index => $dateStr) {
+        $date = new DateTime($dateStr);
+        $dayOfWeek = (int)$date->format('N'); // 1 = Lunes, ..., 7 = Domingo
+
+        if (isset($schedule[$dayOfWeek]) && $schedule[$dayOfWeek] > 0) {
+            $hours = (int)$schedule[$dayOfWeek];
+            
+            // Determinar periodo escolar
+            $period = 1;
+            if ($index > $p2EndIndex) {
+                $period = 3;
+            } elseif ($index > $p1EndIndex) {
+                $period = 2;
+            }
+
+            for ($h = 1; $h <= $hours; $h++) {
+                $sessions[] = [
+                    'session_number' => $sessionNumber++,
+                    'date' => $dateStr,
+                    'day_of_week' => $dayOfWeek,
+                    'period' => $period
+                ];
+            }
+        }
+    }
+    return $sessions;
+}
+
+/**
+ * Distribuye los PDAs equitativamente entre las sesiones calculadas para la materia.
+ *
+ * @param array $sessions Listado de sesiones mapeadas
+ * @param int $totalPDAs Número total de PDAs de la materia
+ * @param int $subjectId ID de la materia
+ * @param PDO $pdo Conexión PDO para traer títulos personalizados
+ * @return array PDAs con su conteo de sesiones, fechas y periodos
+ */
+function calculatePdaDistribution($sessions, $totalPDAs, $subjectId, $pdo) {
+    $totalSessions = count($sessions);
+    if ($totalSessions === 0 || $totalPDAs === 0) {
+        return [];
+    }
+
+    // Obtener nombres/temas guardados en la BD
+    $stmt = $pdo->prepare("SELECT pda_number, topic FROM pdas WHERE subject_id = ?");
+    $stmt->execute([$subjectId]);
+    $savedPdas = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
+    $baseSessions = (int)floor($totalSessions / $totalPDAs);
+    $remainder = $totalSessions % $totalPDAs;
+
+    $pdaDistribution = [];
+    $sessionIndex = 0;
+
+    for ($i = 1; $i <= $totalPDAs; $i++) {
+        // Distribuir el residuo entre los primeros PDAs
+        $pdaSessionsCount = $baseSessions + ($i <= $remainder ? 1 : 0);
+        $topic = isset($savedPdas[$i]) ? $savedPdas[$i] : "Proceso de Desarrollo de Aprendizaje (PDA) $i";
+
+        if ($pdaSessionsCount > 0 && $sessionIndex < $totalSessions) {
+            $startSession = $sessions[$sessionIndex];
+            $endSession = $sessions[min($sessionIndex + $pdaSessionsCount - 1, $totalSessions - 1)];
+            
+            // Recopilar todas las sesiones de este PDA
+            $pdaSessionsDetail = array_slice($sessions, $sessionIndex, $pdaSessionsCount);
+
+            $pdaDistribution[] = [
+                'pda_number' => $i,
+                'topic' => $topic,
+                'sessions_count' => $pdaSessionsCount,
+                'start_date' => $startSession['date'],
+                'end_date' => $endSession['date'],
+                'start_period' => $startSession['period'],
+                'end_period' => $endSession['period'],
+                'sessions' => $pdaSessionsDetail
+            ];
+
+            $sessionIndex += $pdaSessionsCount;
+        } else {
+            $pdaDistribution[] = [
+                'pda_number' => $i,
+                'topic' => $topic,
+                'sessions_count' => 0,
+                'start_date' => null,
+                'end_date' => null,
+                'start_period' => null,
+                'end_period' => null,
+                'sessions' => []
+            ];
+        }
+    }
+
+    return $pdaDistribution;
+}
+
+/**
+ * Formatea una fecha al español.
+ * Ej: "2026-08-24" -> "Lunes, 24 Ago 2026"
+ *
+ * @param string $dateStr Fecha en formato YYYY-MM-DD
+ * @param bool $short Si es true, acorta el nombre del mes
+ * @return string Fecha formateada
+ */
+function formatDateSpanish($dateStr, $short = false) {
+    if (empty($dateStr)) return 'N/A';
+    
+    $date = new DateTime($dateStr);
+    
+    $days = [
+        'Sunday' => 'Domingo',
+        'Monday' => 'Lunes',
+        'Tuesday' => 'Martes',
+        'Wednesday' => 'Miércoles',
+        'Thursday' => 'Jueves',
+        'Friday' => 'Viernes',
+        'Saturday' => 'Sábado'
+    ];
+    
+    $months = [
+        'January' => 'Enero', 'February' => 'Febrero', 'March' => 'Marzo',
+        'April' => 'Abril', 'May' => 'Mayo', 'June' => 'Junio',
+        'July' => 'Julio', 'August' => 'Agosto', 'September' => 'Septiembre',
+        'October' => 'Octubre', 'November' => 'Noviembre', 'December' => 'Diciembre'
+    ];
+
+    $monthsShort = [
+        'January' => 'Ene', 'February' => 'Feb', 'March' => 'Mar',
+        'April' => 'Abr', 'May' => 'May', 'June' => 'Jun',
+        'July' => 'Jul', 'August' => 'Ago', 'September' => 'Sep',
+        'October' => 'Oct', 'November' => 'Nov', 'December' => 'Dic'
+    ];
+
+    $dayName = $days[$date->format('l')];
+    $monthName = $short ? $monthsShort[$date->format('F')] : $months[$date->format('F')];
+    $dayNum = $date->format('j');
+    $year = $date->format('Y');
+
+    if ($short) {
+        return "$dayName $dayNum/$monthName/$year";
+    }
+    return "$dayName, $dayNum de $monthName de $year";
+}
+
+/**
+ * Retorna el nombre del día de la semana en español a partir del número.
+ *
+ * @param int $dayNum 1 (Lunes) a 7 (Domingo)
+ * @return string Nombre del día
+ */
+function getDayNameSpanish($dayNum) {
+    $days = [
+        1 => 'Lunes',
+        2 => 'Martes',
+        3 => 'Miércoles',
+        4 => 'Jueves',
+        5 => 'Viernes',
+        6 => 'Sábado',
+        7 => 'Domingo'
+    ];
+    return isset($days[$dayNum]) ? $days[$dayNum] : '';
+}
