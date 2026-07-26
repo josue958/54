@@ -118,6 +118,19 @@ function getWeekdayLabel($letter) {
         default: return $letter;
     }
 }
+
+function getMonthWithYear($monthName) {
+    $monthUpper = mb_strtoupper(trim($monthName));
+    $year2025 = ['AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+    $year2026 = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO'];
+    
+    if (in_array($monthUpper, $year2025)) {
+        return $monthName . ' 2025';
+    } elseif (in_array($monthUpper, $year2026)) {
+        return $monthName . ' 2026';
+    }
+    return $monthName;
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -480,7 +493,7 @@ function getWeekdayLabel($letter) {
                             <?php foreach ($monthsList as $monthData): ?>
                                 <div class="card">
                                     <div class="card-title">
-                                        <span>📅</span> <?php echo htmlspecialchars($monthData['month']); ?>
+                                        <span>📅</span> <?php echo htmlspecialchars(getMonthWithYear($monthData['month'])); ?>
                                     </div>
                                     
                                     <div class="table-scroll-container">
@@ -494,6 +507,9 @@ function getWeekdayLabel($letter) {
                                                             
                                                             $text = $cell['text'] ?? '';
                                                             $cleanText = preg_replace('/\s+/', ' ', trim($text));
+                                                            if ($cell['type'] === 'month_name') {
+                                                                $cleanText = getMonthWithYear($cleanText);
+                                                            }
                                                             
                                                             if ($cell['is_header']): ?>
                                                                 <th<?php echo $colspanAttr . $rowspanAttr; ?>>
