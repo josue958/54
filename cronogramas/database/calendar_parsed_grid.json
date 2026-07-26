@@ -1,6 +1,6 @@
 [
     {
-        "moment": "MOMENTO 1",
+        "moment": "TRIMESTRE 1",
         "months": [
             {
                 "month": "AGOSTO",
@@ -2201,7 +2201,7 @@
         ]
     },
     {
-        "moment": "MOMENTO 2",
+        "moment": "TRIMESTRE 2",
         "months": [
             {
                 "month": "DICIEMBRE",
@@ -4818,7 +4818,7 @@
         ]
     },
     {
-        "moment": "MOMENTO 3",
+        "moment": "TRIMESTRE 3",
         "months": [
             {
                 "month": "ABRIL",

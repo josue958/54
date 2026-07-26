@@ -13,7 +13,7 @@ if (file_exists($jsonPath)) {
     $calendarGrid = json_decode(file_get_contents($jsonPath), true);
 }
 
-// Organizar datos del cronograma por momentos
+// Organizar datos del cronograma por trimestres
 $moments = [];
 if (!empty($calendarGrid)) {
     foreach ($calendarGrid as $mGrid) {
@@ -461,7 +461,7 @@ function getWeekdayLabel($letter) {
                         </div>
                     </div>
 
-                    <!-- Pestañas para los 3 Momentos -->
+                    <!-- Pestañas para los 3 Trimestres -->
                     <div class="tabs-header">
                         <?php $first = true; foreach (array_keys($moments) as $mName): ?>
                             <button class="tab-btn <?php echo $first ? 'active' : ''; ?>" onclick="switchMoment('<?php echo hash('sha256', $mName); ?>', this)">
@@ -470,7 +470,7 @@ function getWeekdayLabel($letter) {
                         <?php $first = false; endforeach; ?>
                     </div>
 
-                    <!-- Contenido de cada Momento -->
+                    <!-- Contenido de cada Trimestre -->
                     <?php $first = true; foreach ($moments as $mName => $monthsList): ?>
                         <div id="<?php echo hash('sha256', $mName); ?>" class="moment-content <?php echo $first ? 'active' : ''; ?>">
                             <?php foreach ($monthsList as $monthData): ?>

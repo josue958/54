@@ -1,6 +1,6 @@
 [
     {
-        "moment": "MOMENTO 1",
+        "moment": "TRIMESTRE 1",
         "month": "AGOSTO",
         "days": [
             {
@@ -132,7 +132,7 @@
         ]
     },
     {
-        "moment": "MOMENTO 1",
+        "moment": "TRIMESTRE 1",
         "month": "SEPTIEMBRE",
         "days": [
             {
@@ -270,7 +270,7 @@
         ]
     },
     {
-        "moment": "MOMENTO 1",
+        "moment": "TRIMESTRE 1",
         "month": "OCTUBRE",
         "days": [
             {
@@ -408,7 +408,7 @@
         ]
     },
     {
-        "moment": "MOMENTO 1",
+        "moment": "TRIMESTRE 1",
         "month": "NOVIEMBRE",
         "days": [
             {
@@ -534,7 +534,7 @@
         ]
     },
     {
-        "moment": "MOMENTO 2",
+        "moment": "TRIMESTRE 2",
         "month": "DICIEMBRE",
         "days": [
             {
@@ -678,7 +678,7 @@
         ]
     },
     {
-        "moment": "MOMENTO 2",
+        "moment": "TRIMESTRE 2",
         "month": "ENERO",
         "days": [
             {
@@ -816,7 +816,7 @@
         ]
     },
     {
-        "moment": "MOMENTO 2",
+        "moment": "TRIMESTRE 2",
         "month": "FEBRERO",
         "days": [
             {
@@ -942,7 +942,7 @@
         ]
     },
     {
-        "moment": "MOMENTO 2",
+        "moment": "TRIMESTRE 2",
         "month": "MARZO",
         "days": [
             {
@@ -1080,7 +1080,7 @@
         ]
     },
     {
-        "moment": "MOMENTO 3",
+        "moment": "TRIMESTRE 3",
         "month": "ABRIL",
         "days": [
             {
@@ -1218,7 +1218,7 @@
         ]
     },
     {
-        "moment": "MOMENTO 3",
+        "moment": "TRIMESTRE 3",
         "month": "MAYO",
         "days": [
             {
@@ -1350,7 +1350,7 @@
         ]
     },
     {
-        "moment": "MOMENTO 3",
+        "moment": "TRIMESTRE 3",
         "month": "JUNIO",
         "days": [
             {
@@ -1488,7 +1488,7 @@
         ]
     },
     {
-        "moment": "MOMENTO 3",
+        "moment": "TRIMESTRE 3",
         "month": "JULIO",
         "days": [
             {
