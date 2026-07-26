@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JOKARHE — Planeador de Ciclos y PDAs</title>
+  <meta name="description" content="Planeador de Ciclos Escolares y PDAs. Gestiona ciclos, materias, días inhábiles y cronograma de cobertura.">
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- sql.js (SQLite en WebAssembly) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"
+          crossorigin="anonymous"></script>
+</head>
+<body>
+
+<!-- Splash de carga -->
+<div id="splash">
+  <div style="font-family:'Montserrat',sans-serif;font-size:26px;font-weight:800;color:#C9A646;letter-spacing:2px">JOKARHE</div>
+  <div class="spinner"></div>
+  <p style="color:#64748b;font-size:13px">Iniciando base de datos SQLite…</p>
+</div>
+
+<!-- Shell de la app -->
+<div class="app-shell">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div style="font-size:22px">📋</div>
+    <div>
+      <span class="topbar-logo">JOKARHE</span>
+      <span class="topbar-subtitle">Planeador de Ciclos y PDAs</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost btn-sm" onclick="handleExport()" title="Exportar base de datos">💾 Exportar</button>
+      <button class="btn btn-ghost btn-sm" onclick="handleImport()" title="Importar base de datos">📂 Importar</button>
+      <button class="btn btn-ghost btn-sm" onclick="handleReset()" title="Restablecer a datos de ejemplo">🔄 Reset</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-nav">
+      <!-- Navegación principal -->
+      <div class="nav-section-title">Navegación</div>
+      <button class="nav-link" data-route="dashboard" onclick="navigate('#dashboard')">
+        <span class="nav-icon">🗓️</span> Cronograma
+      </button>
+      <button class="nav-link" data-route="cycles" onclick="navigate('#cycles')">
+        <span class="nav-icon">⚙️</span> Ciclos Escolares
+      </button>
+      <button class="nav-link" data-route="subjects" onclick="navigate('#subjects')">
+        <span class="nav-icon">📚</span> Materias
+      </button>
+
+      <div class="nav-divider"></div>
+    </div>
+
+    <div class="sidebar-quick">
+      <!-- Ciclos rápidos -->
+      <div class="sidebar-quick-title">Ciclos</div>
+      <div id="sidebar-cycles"></div>
+
+      <div style="height:12px"></div>
+
+      <!-- Materias rápidas -->
+      <div class="sidebar-quick-title">Materias</div>
+      <div id="sidebar-subjects"></div>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <main class="main-content" id="main-content">
+    <!-- Renderizado por app.js -->
+  </main>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- Scripts: helpers → db → api → vistas → app -->
+<script src="js/helpers.js"></script>
+<script src="js/db.js"></script>
+<script src="js/api.js"></script>
+<script src="js/views/cycles.js"></script>
+<script src="js/views/subjects.js"></script>
+<script src="js/views/dashboard.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
