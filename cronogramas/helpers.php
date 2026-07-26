@@ -108,80 +108,141 @@ function calculatePdaDistribution($sessions, $totalPDAs, $subjectId, $pdo) {
         return [];
     }
 
-    // Obtener nombres/temas y número de sesiones guardados en la BD
-    $stmt = $pdo->prepare("SELECT pda_number, topic, sessions_count FROM pdas WHERE subject_id = ? ORDER BY pda_number ASC");
+    // Obtener nombres/temas, número de sesiones y overrides guardados en la BD
+    $stmt = $pdo->prepare("SELECT pda_number, topic, sessions_count, start_date_override FROM pdas WHERE subject_id = ? ORDER BY pda_number ASC");
     $stmt->execute([$subjectId]);
     $savedPdas = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
     // Mapear datos cargados
     $pdaTopics = [];
     $pdaSessions = [];
+    $pdaStartOverrides = [];
     foreach ($savedPdas as $row) {
         $pdaTopics[$row['pda_number']] = $row['topic'];
         $pdaSessions[$row['pda_number']] = $row['sessions_count'];
+        $pdaStartOverrides[$row['pda_number']] = $row['start_date_override'];
     }
 
-    // Verificar si existen cantidades personalizadas
-    $hasCustomSessions = false;
-    foreach ($pdaSessions as $num => $cnt) {
-        if ($cnt !== null) {
-            $hasCustomSessions = true;
-            break;
+    // Construir mapa de fecha → índice de sesión para búsqueda rápida
+    $dateToFirstSessionIndex = [];
+    foreach ($sessions as $idx => $sess) {
+        $d = $sess['date'];
+        if (!isset($dateToFirstSessionIndex[$d])) {
+            $dateToFirstSessionIndex[$d] = $idx;
         }
     }
 
-    // Determinar la cantidad de sesiones para cada PDA
-    $pdaCounts = [];
+    // Determinar la cantidad base de sesiones para cada PDA (equitativo o personalizado)
     $baseSessions = (int)floor($totalSessions / $totalPDAs);
     $remainder = $totalSessions % $totalPDAs;
 
+    $pdaCounts = [];
     for ($i = 1; $i <= $totalPDAs; $i++) {
         if (isset($pdaSessions[$i]) && $pdaSessions[$i] !== null) {
             $pdaCounts[$i] = (int)$pdaSessions[$i];
         } else {
-            // Por defecto toma su parte equitativa si no tiene valor personalizado guardado
             $pdaCounts[$i] = $baseSessions + ($i <= $remainder ? 1 : 0);
         }
     }
 
+    // Distribución con soporte de start_date_override en cascada
     $pdaDistribution = [];
-    $sessionIndex = 0;
+    $sessionIndex = 0; // cursor sobre el array $sessions
 
     for ($i = 1; $i <= $totalPDAs; $i++) {
-        $pdaSessionsCount = $pdaCounts[$i];
         $topic = isset($pdaTopics[$i]) ? $pdaTopics[$i] : "Proceso de Desarrollo de Aprendizaje (PDA) $i";
+        $overrideDate = isset($pdaStartOverrides[$i]) ? $pdaStartOverrides[$i] : null;
+
+        // --- Resolver el índice de inicio para este PDA ---
+        $startIndex = $sessionIndex;
+
+        if (!empty($overrideDate)) {
+            // Buscar la primera sesión en o después de la fecha override
+            $anchorIndex = null;
+
+            // Si la fecha exacta existe en el mapa, usar ese índice
+            if (isset($dateToFirstSessionIndex[$overrideDate])) {
+                $anchorIndex = $dateToFirstSessionIndex[$overrideDate];
+            } else {
+                // Buscar la primera sesión posterior a la fecha override
+                $overrideDt = new DateTime($overrideDate);
+                foreach ($sessions as $idx => $sess) {
+                    $sessDt = new DateTime($sess['date']);
+                    if ($sessDt >= $overrideDt) {
+                        $anchorIndex = $idx;
+                        break;
+                    }
+                }
+            }
+
+            // Solo aplicar el override si el ancla es válida y está dentro del ciclo
+            if ($anchorIndex !== null && $anchorIndex >= 0 && $anchorIndex < $totalSessions) {
+                // Ajustar el PDA anterior: extender hasta el ancla si es posterior,
+                // o recortar si la ancla es anterior al cursor actual
+                if ($anchorIndex !== $sessionIndex && !empty($pdaDistribution)) {
+                    // Recalcular el sessions_count real del PDA anterior para que llegue exactamente al ancla
+                    $prev = &$pdaDistribution[count($pdaDistribution) - 1];
+                    $prevStartIdx = $prev['_start_index'];
+                    $prevCount = $anchorIndex - $prevStartIdx;
+                    if ($prevCount >= 0) {
+                        $prevEndIdx = min($prevStartIdx + $prevCount - 1, $totalSessions - 1);
+                        $prev['sessions_count'] = $prevCount;
+                        $prev['sessions'] = array_slice($sessions, $prevStartIdx, $prevCount);
+                        if ($prevCount > 0) {
+                            $prev['end_date'] = $sessions[$prevEndIdx]['date'];
+                            $prev['end_period'] = $sessions[$prevEndIdx]['period'];
+                        }
+                    }
+                }
+                $startIndex = $anchorIndex;
+            }
+            // Si el ancla no es válida simplemente ignorar el override
+        }
+
+        $sessionIndex = $startIndex;
+
+        // --- Asignar sesiones al PDA actual ---
+        $pdaSessionsCount = $pdaCounts[$i];
 
         if ($pdaSessionsCount > 0 && $sessionIndex < $totalSessions) {
             $startSession = $sessions[$sessionIndex];
-            $endSession = $sessions[min($sessionIndex + $pdaSessionsCount - 1, $totalSessions - 1)];
-            
-            // Recopilar todas las sesiones de este PDA
+            $endIdx = min($sessionIndex + $pdaSessionsCount - 1, $totalSessions - 1);
+            $endSession = $sessions[$endIdx];
             $pdaSessionsDetail = array_slice($sessions, $sessionIndex, $pdaSessionsCount);
 
-            $pdaDistribution[] = [
-                'pda_number' => $i,
-                'topic' => $topic,
-                'sessions_count' => $pdaSessionsCount,
-                'start_date' => $startSession['date'],
-                'end_date' => $endSession['date'],
-                'start_period' => $startSession['period'],
-                'end_period' => $endSession['period'],
-                'sessions' => $pdaSessionsDetail
+            $entry = [
+                'pda_number'    => $i,
+                'topic'         => $topic,
+                'sessions_count'=> $pdaSessionsCount,
+                'start_date'    => $startSession['date'],
+                'end_date'      => $endSession['date'],
+                'start_period'  => $startSession['period'],
+                'end_period'    => $endSession['period'],
+                'sessions'      => $pdaSessionsDetail,
+                'start_date_override' => $overrideDate,
+                '_start_index'  => $sessionIndex,  // clave interna para ajustes de cascada
             ];
-
+            $pdaDistribution[] = $entry;
             $sessionIndex += $pdaSessionsCount;
         } else {
             $pdaDistribution[] = [
-                'pda_number' => $i,
-                'topic' => $topic,
-                'sessions_count' => 0,
-                'start_date' => null,
-                'end_date' => null,
-                'start_period' => null,
-                'end_period' => null,
-                'sessions' => []
+                'pda_number'    => $i,
+                'topic'         => $topic,
+                'sessions_count'=> 0,
+                'start_date'    => null,
+                'end_date'      => null,
+                'start_period'  => null,
+                'end_period'    => null,
+                'sessions'      => [],
+                'start_date_override' => $overrideDate,
+                '_start_index'  => $sessionIndex,
             ];
         }
+    }
+
+    // Eliminar la clave interna antes de devolver
+    foreach ($pdaDistribution as &$entry) {
+        unset($entry['_start_index']);
     }
 
     return $pdaDistribution;

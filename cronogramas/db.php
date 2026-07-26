@@ -68,6 +68,13 @@ try {
         // Ignorar si la columna ya existe
     }
 
+    // Migración: columna para fecha de inicio personalizada por PDA
+    try {
+        $pdo->exec("ALTER TABLE pdas ADD COLUMN start_date_override TEXT DEFAULT NULL;");
+    } catch (PDOException $e) {
+        // Ignorar si la columna ya existe
+    }
+
     // Crear tabla de Períodos Inhábiles Personalizados
     $pdo->exec("CREATE TABLE IF NOT EXISTS custom_holidays (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

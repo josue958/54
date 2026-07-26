@@ -88,16 +88,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $topic = trim($_POST['topic'] ?? '');
         $sessionsCount = isset($_POST['sessions_count']) && $_POST['sessions_count'] !== '' ? (int)$_POST['sessions_count'] : null;
 
+        // Fecha de inicio override: guardar si se proporcionó, null si se dejó vacío (restablecer)
+        $startDateOverrideRaw = trim($_POST['start_date_override'] ?? '');
+        $startDateOverride = (!empty($startDateOverrideRaw) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDateOverrideRaw))
+            ? $startDateOverrideRaw
+            : null;
+
         try {
-            $stmtUpdate = $pdo->prepare("UPDATE pdas SET topic = ?, sessions_count = ? WHERE subject_id = ? AND pda_number = ?");
-            $stmtUpdate->execute([$topic, $sessionsCount, $subjId, $pdaNumber]);
+            $stmtUpdate = $pdo->prepare("UPDATE pdas SET topic = ?, sessions_count = ?, start_date_override = ? WHERE subject_id = ? AND pda_number = ?");
+            $stmtUpdate->execute([$topic, $sessionsCount, $startDateOverride, $subjId, $pdaNumber]);
             $message = "PDA $pdaNumber actualizado correctamente.";
             $messageType = "success";
         } catch (PDOException $e) {
             $message = "Error al actualizar PDA: " . $e->getMessage();
             $messageType = "error";
         }
-        
+
         // Redirigir para mantener la vista del PDA detallada
         header("Location: subjects.php?id=" . $subjId . "&msg=" . urlencode($message) . "&msg_type=" . $messageType);
         exit;
@@ -191,6 +197,9 @@ if ($subjectId) {
             $sessions = getSubjectSessions($schoolDays, $schedule, $viewCycle['period1_days'], $viewCycle['period2_days']);
             
             $pdaDistribution = calculatePdaDistribution($sessions, $viewSubject['total_pdas'], $viewSubject['id'], $pdo);
+
+            // Adjuntar la fecha de inicio del ciclo a viewSubject para disponibilidad en el formulario
+            $viewSubject['cycle_start'] = $viewCycle['start_date'];
         }
     }
 }
@@ -348,11 +357,13 @@ if ($subjectId) {
 
                                     <!-- Cuerpo de información adicional y personalización -->
                                     <div class="pda-content-body" id="pda-body-<?php echo $pda['pda_number']; ?>" style="display: none;">
-                                        <!-- Formulario para editar el nombre y sesiones del PDA -->
-                                        <form method="POST" style="display:flex; flex-direction:column; gap:8px; margin-bottom: 16px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: var(--radius); border: 1px solid var(--border);">
+                                        <!-- Formulario para editar el nombre, sesiones y fecha de inicio del PDA -->
+                                        <form method="POST" style="display:flex; flex-direction:column; gap:10px; margin-bottom: 16px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: var(--radius); border: 1px solid var(--border);">
                                             <input type="hidden" name="action" value="save_pda_topic">
                                             <input type="hidden" name="subject_id" value="<?php echo $viewSubject['id']; ?>">
                                             <input type="hidden" name="pda_number" value="<?php echo $pda['pda_number']; ?>">
+
+                                            <!-- Fila 1: Tema y sesiones -->
                                             <div style="display: flex; gap: 8px; width: 100%;">
                                                 <div style="flex: 3;">
                                                     <label class="form-label" style="font-size: 11px; margin-bottom: 2px;">Nombre / Tema del PDA</label>
@@ -363,6 +374,41 @@ if ($subjectId) {
                                                     <input type="number" name="sessions_count" class="form-control" min="0" max="<?php echo count($sessions); ?>" value="<?php echo $pda['sessions_count']; ?>" required style="padding: 6px 10px; font-size:12px;">
                                                 </div>
                                             </div>
+
+                                            <!-- Fila 2: Fecha de inicio (override) -->
+                                            <div>
+                                                <label class="form-label" style="font-size: 11px; margin-bottom: 2px;">
+                                                    📅 Fecha de Inicio
+                                                    <?php if (!empty($pda['start_date_override'])): ?>
+                                                        <span style="color: var(--color-warning); font-size: 10px; margin-left: 4px;">⚡ personalizada</span>
+                                                    <?php else: ?>
+                                                        <span style="color: var(--text-muted); font-size: 10px; margin-left: 4px;">calculada automáticamente</span>
+                                                    <?php endif; ?>
+                                                </label>
+                                                <div style="display: flex; gap: 6px; align-items: center;">
+                                                    <input
+                                                        type="date"
+                                                        name="start_date_override"
+                                                        id="override-date-<?php echo $pda['pda_number']; ?>"
+                                                        class="form-control pda-date-override-input"
+                                                        value="<?php echo htmlspecialchars($pda['start_date_override'] ?? $pda['start_date'] ?? ''); ?>"
+                                                        data-auto-date="<?php echo htmlspecialchars($pda['start_date'] ?? ''); ?>"
+                                                        data-has-override="<?php echo !empty($pda['start_date_override']) ? '1' : '0'; ?>"
+                                                        min="<?php echo $viewSubject['cycle_start'] ?? ''; ?>"
+                                                        style="padding: 6px 10px; font-size:12px; flex:1;"
+                                                    >
+                                                    <button
+                                                        type="button"
+                                                        title="Restablecer fecha automática (borrar override)"
+                                                        onclick="resetPdaDate(this)"
+                                                        style="padding: 6px 10px; font-size: 11px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; color: var(--text-secondary); white-space: nowrap;"
+                                                    >🔄 Auto</button>
+                                                </div>
+                                                <p style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">
+                                                    Fecha ideal calculada: <strong><?php echo formatDateSpanish($pda['start_date'], true); ?></strong>. Modificar esta fecha reorganizará los PDAs posteriores.
+                                                </p>
+                                            </div>
+
                                             <button type="submit" class="btn btn-primary btn-sm" style="align-self: flex-end; padding: 6px 16px; font-size:11px;">💾 Guardar Cambios</button>
                                         </form>
 
@@ -583,6 +629,32 @@ if ($subjectId) {
                         weeklyInput.addEventListener('input', validateHours);
                         // Ejecutar al cargar por si hay datos
                         validateHours();
+                    }
+                </script>
+
+                <script>
+                    /**
+                     * Restablece la fecha de inicio de un PDA al valor automático calculado.
+                     * Vacía el campo para que el servidor interprete null (sin override).
+                     */
+                    function resetPdaDate(btn) {
+                        const form = btn.closest('form');
+                        const input = form.querySelector('.pda-date-override-input');
+                        if (!input) return;
+                        // Mostrar la fecha calculada visualmente pero enviar vacío al servidor
+                        const autoDate = input.dataset.autoDate || '';
+                        input.value = '';
+                        input.placeholder = autoDate ? 'Auto: ' + autoDate : 'Automático';
+                        input.dataset.hasOverride = '0';
+                        // Indicar visualmente que está en modo auto
+                        const label = form.querySelector('label');
+                        if (label) {
+                            const badge = label.querySelector('span');
+                            if (badge) {
+                                badge.style.color = 'var(--text-muted)';
+                                badge.textContent = 'calculada automáticamente';
+                            }
+                        }
                     }
                 </script>
             <?php endif; ?>
