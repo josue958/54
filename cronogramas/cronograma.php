@@ -40,11 +40,14 @@ try {
 
     // Lista de Materias con el nombre del Ciclo Escolar al que pertenecen
     $subjects = $pdo->query("
-        SELECT s.*, c.name as cycle_name 
+        SELECT s.*, c.name as cycle_name, c.start_date as cycle_start_date 
         FROM subjects s 
         JOIN school_cycles c ON s.cycle_id = c.id 
         ORDER BY s.name ASC
     ")->fetchAll();
+
+    // Obtener año de inicio por defecto
+    $defaultStartYear = !empty($subjects) ? (int)date('Y', strtotime($subjects[0]['cycle_start_date'])) : 2026;
 
 } catch (PDOException $e) {
     $error = "Error al recuperar datos: " . $e->getMessage();
@@ -119,17 +122,12 @@ function getWeekdayLabel($letter) {
     }
 }
 
-function getMonthWithYear($monthName) {
+function getMonthWithYear($monthName, $startYear = 2026) {
     $monthUpper = mb_strtoupper(trim($monthName));
-    $year2025 = ['AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
-    $year2026 = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO'];
+    $yearMonths = ['AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
     
-    if (in_array($monthUpper, $year2025)) {
-        return $monthName . ' 2025';
-    } elseif (in_array($monthUpper, $year2026)) {
-        return $monthName . ' 2026';
-    }
-    return $monthName;
+    $year = in_array($monthUpper, $yearMonths) ? $startYear : ($startYear + 1);
+    return $monthName . ' ' . $year;
 }
 ?>
 <!DOCTYPE html>
@@ -397,7 +395,7 @@ function getMonthWithYear($monthName) {
                                                         <a href="subjects.php?id=<?php echo $subj['id']; ?>" class="btn btn-secondary btn-sm" style="margin-right: 4px;">
                                                             <span>📅</span> Ver Calendario
                                                         </a>
-                                                        <button type="button" class="btn btn-primary btn-sm" onclick="showCronogramaSection()">
+                                                        <button type="button" class="btn btn-primary btn-sm" onclick="showCronogramaSection(<?php echo (int)date('Y', strtotime($subj['cycle_start_date'])); ?>)">
                                                             <span>📊</span> Ver Cronograma
                                                         </button>
                                                     </td>
@@ -492,8 +490,8 @@ function getMonthWithYear($monthName) {
                         <div id="<?php echo hash('sha256', $mName); ?>" class="moment-content <?php echo $first ? 'active' : ''; ?>">
                             <?php foreach ($monthsList as $monthData): ?>
                                 <div class="card">
-                                    <div class="card-title">
-                                        <span>📅</span> <?php echo htmlspecialchars(getMonthWithYear($monthData['month'])); ?>
+                                    <div class="card-title month-label" data-month="<?php echo htmlspecialchars($monthData['month']); ?>">
+                                        <span>📅</span> <?php echo htmlspecialchars(getMonthWithYear($monthData['month'], $defaultStartYear)); ?>
                                     </div>
                                     
                                     <div class="table-scroll-container">
@@ -508,11 +506,11 @@ function getMonthWithYear($monthName) {
                                                             $text = $cell['text'] ?? '';
                                                             $cleanText = preg_replace('/\s+/', ' ', trim($text));
                                                             if ($cell['type'] === 'month_name') {
-                                                                $cleanText = getMonthWithYear($cleanText);
+                                                                $cleanText = getMonthWithYear($cleanText, $defaultStartYear);
                                                             }
                                                             
                                                             if ($cell['is_header']): ?>
-                                                                <th<?php echo $colspanAttr . $rowspanAttr; ?>>
+                                                                <th<?php echo $colspanAttr . $rowspanAttr; ?> <?php if ($cell['type'] === 'month_name') echo 'class="month-label" data-month="' . htmlspecialchars($text) . '"'; ?>>
                                                                     <?php echo htmlspecialchars($cleanText); ?>
                                                                 </th>
                                                             <?php else: 
@@ -556,9 +554,24 @@ function getMonthWithYear($monthName) {
             btn.classList.add('active');
         }
 
-        function showCronogramaSection() {
+        function showCronogramaSection(startYear) {
             var section = document.getElementById('cronograma-excel-section');
             if (section) {
+                var yearMonths = ['AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+                var labels = document.querySelectorAll('.month-label');
+                labels.forEach(function(el) {
+                    var baseMonth = el.getAttribute('data-month');
+                    if (!baseMonth) return;
+                    
+                    var baseMonthTrim = baseMonth.trim();
+                    var isFirstPart = yearMonths.includes(baseMonthTrim.toUpperCase());
+                    var calculatedYear = isFirstPart ? startYear : (startYear + 1);
+                    
+                    var span = el.querySelector('span');
+                    var prefix = span ? span.outerHTML + ' ' : '';
+                    el.innerHTML = prefix + baseMonthTrim + ' ' + calculatedYear;
+                });
+
                 section.style.display = 'block';
                 section.scrollIntoView({ behavior: 'smooth' });
             }
