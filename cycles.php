@@ -231,6 +231,10 @@ if ($editId) {
                         <span class="nav-item-icon">📚</span>
                         Materias / PDAs
                     </a>
+                    <a href="cronograma_excel.php" class="nav-item">
+                        <span class="nav-item-icon">📊</span>
+                        Cronograma 5 HS
+                    </a>
                 </div>
             </nav>
         </aside>

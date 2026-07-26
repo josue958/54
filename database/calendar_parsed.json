@@ -1,0 +1,1634 @@
+[
+    {
+        "moment": "MOMENTO 1",
+        "month": "AGOSTO",
+        "days": [
+            {
+                "day": 1,
+                "weekday": "V",
+                "pda": "RECESO DE CLASES",
+                "seguimiento": null
+            },
+            {
+                "day": 4,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 5,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 6,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 7,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 8,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 11,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 12,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 13,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 14,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 15,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 18,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 19,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 20,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 21,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 22,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 25,
+                "weekday": "L",
+                "pda": "CONSEJO TÉCNICO ESCOLAR FASE                   INTENSIVA ",
+                "seguimiento": null
+            },
+            {
+                "day": 26,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 27,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 28,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 29,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            }
+        ]
+    },
+    {
+        "moment": "MOMENTO 1",
+        "month": "SEPTIEMBRE",
+        "days": [
+            {
+                "day": 1,
+                "weekday": "L",
+                "pda": "1 SEMANA DE DIAGNÓSTICO INICIAL",
+                "seguimiento": null
+            },
+            {
+                "day": 2,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 3,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 4,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 5,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 8,
+                "weekday": "L",
+                "pda": "JORNADA DE CONCIENTIZACIÓN  ABUSO SEXUAL Y MALTRATO INFANTIL.",
+                "seguimiento": null
+            },
+            {
+                "day": 9,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 10,
+                "weekday": "M",
+                "pda": "DIAGNÓSTICO MEJOREDU",
+                "seguimiento": null
+            },
+            {
+                "day": 11,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 12,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 15,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 16,
+                "weekday": "M",
+                "pda": "SUS PEN SIÓN DE LA BO RES ",
+                "seguimiento": null
+            },
+            {
+                "day": 17,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 18,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 19,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 22,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 23,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 24,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 25,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 26,
+                "weekday": "V",
+                "pda": "CTE 1a SES.",
+                "seguimiento": null
+            },
+            {
+                "day": 29,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 30,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            }
+        ]
+    },
+    {
+        "moment": "MOMENTO 1",
+        "month": "OCTUBRE",
+        "days": [
+            {
+                "day": 1,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 2,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 3,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 6,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 7,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 8,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 9,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 10,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 13,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 14,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 15,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 16,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 17,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 20,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 21,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 22,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 23,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 24,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 27,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 28,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 29,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 30,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            }
+        ]
+    },
+    {
+        "moment": "MOMENTO 1",
+        "month": "NOVIEMBRE",
+        "days": [
+            {
+                "day": 3,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 4,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 5,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 6,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 7,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 10,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 11,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 12,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 13,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 14,
+                "weekday": "V",
+                "pda": "REGISTRO DE CALIFICACIONES",
+                "seguimiento": null
+            },
+            {
+                "day": 17,
+                "weekday": "L",
+                "pda": "SUS PEN SIÓN DE LA BO RES",
+                "seguimiento": null
+            },
+            {
+                "day": 18,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 19,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 20,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 21,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 24,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 25,
+                "weekday": "M",
+                "pda": "EN TREGA DE BO LE TAS   A PADRES",
+                "seguimiento": null
+            },
+            {
+                "day": 26,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 27,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 28,
+                "weekday": "V",
+                "pda": "CT E 3a SES.",
+                "seguimiento": null
+            }
+        ]
+    },
+    {
+        "moment": "MOMENTO 2",
+        "month": "DICIEMBRE",
+        "days": [
+            {
+                "day": 1,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 2,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 3,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 4,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 5,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 8,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 9,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 10,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 11,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 12,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 15,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 16,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 17,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 18,
+                "weekday": "J",
+                "pda": "CONVIVIO FIN DE AÑO CIVIL Y ACTIVIDA DES DECEMBRI NAS",
+                "seguimiento": null
+            },
+            {
+                "day": 19,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 22,
+                "weekday": "L",
+                "pda": "PERIODO VACACIONAL DECEMBRINO",
+                "seguimiento": null
+            },
+            {
+                "day": 23,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 24,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 25,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 26,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 27,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 30,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 31,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            }
+        ]
+    },
+    {
+        "moment": "MOMENTO 2",
+        "month": "ENERO",
+        "days": [
+            {
+                "day": 1,
+                "weekday": "J",
+                "pda": "PERIODO VACACIONAL DECEMBRINO",
+                "seguimiento": null
+            },
+            {
+                "day": 2,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 5,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 6,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 7,
+                "weekday": "M",
+                "pda": " TA LLER IN TEN SIVO DI    RECTI VOS",
+                "seguimiento": null
+            },
+            {
+                "day": 8,
+                "weekday": "J",
+                "pda": " TALLER INTENSI VO DOCEN TES",
+                "seguimiento": null
+            },
+            {
+                "day": 9,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 12,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 13,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 14,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 15,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 16,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 19,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 20,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 21,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 22,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 23,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 26,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 27,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 28,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 29,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 30,
+                "weekday": "V",
+                "pda": "CT E 4a SES.",
+                "seguimiento": null
+            }
+        ]
+    },
+    {
+        "moment": "MOMENTO 2",
+        "month": "FEBRERO",
+        "days": [
+            {
+                "day": 2,
+                "weekday": "L",
+                "pda": "SUSPENSIÓN DE LA BO RES",
+                "seguimiento": null
+            },
+            {
+                "day": 3,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 4,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 5,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 6,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 9,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 10,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 11,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 12,
+                "weekday": "J",
+                "pda": "DIAG NÓS TICO MEJO REDU",
+                "seguimiento": null
+            },
+            {
+                "day": 13,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 16,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 17,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 18,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 19,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 20,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 23,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 24,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 25,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 24,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 27,
+                "weekday": "V",
+                "pda": "CT E 5a SES.",
+                "seguimiento": null
+            }
+        ]
+    },
+    {
+        "moment": "MOMENTO 2",
+        "month": "MARZO",
+        "days": [
+            {
+                "day": 2,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 3,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 4,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 5,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 6,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 9,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 10,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 11,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 12,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 13,
+                "weekday": "V",
+                "pda": "REGISTRO DE CALIFICACIONES",
+                "seguimiento": null
+            },
+            {
+                "day": 16,
+                "weekday": "L",
+                "pda": "SUSPENSIÓN DE LA BO RES",
+                "seguimiento": null
+            },
+            {
+                "day": 17,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 18,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 19,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 20,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 23,
+                "weekday": "L",
+                "pda": "EN TRE GA DE BO LE TAS   A PADRES",
+                "seguimiento": null
+            },
+            {
+                "day": 24,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 25,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 26,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 27,
+                "weekday": "V",
+                "pda": "CT E 6a SES.",
+                "seguimiento": null
+            },
+            {
+                "day": 30,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 31,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            }
+        ]
+    },
+    {
+        "moment": "MOMENTO 3",
+        "month": "ABRIL",
+        "days": [
+            {
+                "day": 1,
+                "weekday": "M",
+                "pda": "PERIODO VACACIONAL",
+                "seguimiento": null
+            },
+            {
+                "day": 2,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 3,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 6,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 7,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 8,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 9,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 10,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 13,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 14,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 15,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 16,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 17,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 20,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 21,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 22,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 23,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 24,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 27,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 28,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 29,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 30,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            }
+        ]
+    },
+    {
+        "moment": "MOMENTO 3",
+        "month": "MAYO",
+        "days": [
+            {
+                "day": 1,
+                "weekday": "V",
+                "pda": "SUS PEN SIÓN DE LA  BO RES",
+                "seguimiento": null
+            },
+            {
+                "day": 4,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 5,
+                "weekday": "M",
+                "pda": "SUS PEN SIÓN DE LA  BO RES",
+                "seguimiento": null
+            },
+            {
+                "day": 6,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 7,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 8,
+                "weekday": "V",
+                "pda": "FES TI VAL DIA DE LAS MADRES",
+                "seguimiento": null
+            },
+            {
+                "day": 11,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 12,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 13,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 14,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 15,
+                "weekday": "V",
+                "pda": "SUS PEN SIÓN DE LA  BO RES",
+                "seguimiento": null
+            },
+            {
+                "day": 18,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 19,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 20,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 21,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 22,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 26,
+                "weekday": "L",
+                "pda": " DIA DEL ES TU DIANTE",
+                "seguimiento": null
+            },
+            {
+                "day": 26,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 27,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 28,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 29,
+                "weekday": "V",
+                "pda": "CT E 7a SES.",
+                "seguimiento": null
+            }
+        ]
+    },
+    {
+        "moment": "MOMENTO 3",
+        "month": "JUNIO",
+        "days": [
+            {
+                "day": 1,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 2,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 3,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 4,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 5,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 8,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 9,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 10,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 11,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 12,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 15,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 16,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 17,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 18,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 19,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 22,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 23,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 24,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 25,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 26,
+                "weekday": "V",
+                "pda": "CT E 8a SES.",
+                "seguimiento": null
+            },
+            {
+                "day": 27,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 30,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            }
+        ]
+    },
+    {
+        "moment": "MOMENTO 3",
+        "month": "JULIO",
+        "days": [
+            {
+                "day": 1,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 2,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 3,
+                "weekday": "V",
+                "pda": "REGISTRO DE CALIFICACIONES",
+                "seguimiento": null
+            },
+            {
+                "day": 6,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 7,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 8,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 9,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 10,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 13,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 14,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 15,
+                "weekday": "M",
+                "pda": " TA LLER IN TEN SIVO DI    RECTI VOS",
+                "seguimiento": null
+            },
+            {
+                "day": 16,
+                "weekday": "J",
+                "pda": " TALLER  INTENSI VO  PARA PERSO  NAL  DOCENTE",
+                "seguimiento": null
+            },
+            {
+                "day": 17,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 18,
+                "weekday": "L",
+                "pda": "RECESO ESCOLAR",
+                "seguimiento": null
+            },
+            {
+                "day": 21,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 22,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 23,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 24,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 25,
+                "weekday": "L",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 28,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 29,
+                "weekday": "M",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 30,
+                "weekday": "J",
+                "pda": null,
+                "seguimiento": null
+            },
+            {
+                "day": 31,
+                "weekday": "V",
+                "pda": null,
+                "seguimiento": null
+            }
+        ]
+    }
+]
