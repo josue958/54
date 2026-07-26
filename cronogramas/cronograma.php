@@ -444,7 +444,7 @@ function getMonthWithYear($monthName, $startYear = 2026) {
                                                         <a href="subjects.php?id=<?php echo $subj['id']; ?>" class="btn btn-secondary btn-sm" style="margin-right: 4px;">
                                                             <span>📅</span> Ver Calendario
                                                         </a>
-                                                        <button type="button" class="btn btn-primary btn-sm" onclick="showCronogramaSection(<?php echo (int)date('Y', strtotime($subj['cycle_start_date'])); ?>, <?php echo $subj['id']; ?>)">
+                                                        <button type="button" class="btn btn-primary btn-sm" onclick="showCronogramaSection(<?php echo (int)date('Y', strtotime($subj['cycle_start_date'])); ?>, <?php echo $subj['id']; ?>, '<?php echo htmlspecialchars($subj['name'], ENT_QUOTES, 'UTF-8'); ?>')">
                                                             <span>📊</span> Ver Cronograma
                                                         </button>
                                                     </td>
@@ -497,10 +497,11 @@ function getMonthWithYear($monthName, $startYear = 2026) {
                         </div>
                     </div>
                 </div>
-                <div class="topbar-actions"></div>
+               
                 <!-- SECCIÓN DE CRONOGRAMA DE EXCEL INTEGRADA -->
                 <?php if (!empty($moments)): ?>
                 <div id="cronograma-excel-section" style="display: none; margin-top: 30px;">
+                    <h2 id="cronograma-subject-title" style="margin-bottom: 20px; color: var(--text-primary); font-size: 20px; font-weight: 700; border-bottom: 2px solid var(--border-light); padding-bottom: 8px;">Cronograma</h2>
                     <div class="legend-card">
                         <span class="legend-title">Leyenda del Cronograma 5 HS:</span>
                         <div class="legend-item">
@@ -605,9 +606,13 @@ function getMonthWithYear($monthName, $startYear = 2026) {
 
         var subjectPdaDateMap = <?php echo json_encode($subjectPdaDateMap, JSON_FORCE_OBJECT); ?>;
 
-        function showCronogramaSection(startYear, subjectId) {
+        function showCronogramaSection(startYear, subjectId, subjectName) {
             var section = document.getElementById('cronograma-excel-section');
             if (section) {
+                var titleEl = document.getElementById('cronograma-subject-title');
+                if (titleEl) {
+                    titleEl.innerHTML = '📊 Cronograma: ' + subjectName;
+                }
                 var yearMonths = ['AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
                 
                 // 1. Update month labels with correct years
