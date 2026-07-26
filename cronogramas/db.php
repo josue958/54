@@ -57,8 +57,16 @@ try {
         subject_id INTEGER NOT NULL,
         pda_number INTEGER NOT NULL,
         topic TEXT NOT NULL, -- Descripción/Nombre del PDA
+        sessions_count INTEGER DEFAULT NULL,
         FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
     );");
+
+    // Ejecutar migración por si la tabla ya existe
+    try {
+        $pdo->exec("ALTER TABLE pdas ADD COLUMN sessions_count INTEGER DEFAULT NULL;");
+    } catch (PDOException $e) {
+        // Ignorar si la columna ya existe
+    }
 
     // Crear tabla de Períodos Inhábiles Personalizados
     $pdo->exec("CREATE TABLE IF NOT EXISTS custom_holidays (

@@ -86,14 +86,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $subjId = (int)$_POST['subject_id'];
         $pdaNumber = (int)$_POST['pda_number'];
         $topic = trim($_POST['topic'] ?? '');
+        $sessionsCount = isset($_POST['sessions_count']) && $_POST['sessions_count'] !== '' ? (int)$_POST['sessions_count'] : null;
 
         try {
-            $stmtUpdate = $pdo->prepare("UPDATE pdas SET topic = ? WHERE subject_id = ? AND pda_number = ?");
-            $stmtUpdate->execute([$topic, $subjId, $pdaNumber]);
-            $message = "Tema del PDA $pdaNumber actualizado.";
+            $stmtUpdate = $pdo->prepare("UPDATE pdas SET topic = ?, sessions_count = ? WHERE subject_id = ? AND pda_number = ?");
+            $stmtUpdate->execute([$topic, $sessionsCount, $subjId, $pdaNumber]);
+            $message = "PDA $pdaNumber actualizado correctamente.";
             $messageType = "success";
         } catch (PDOException $e) {
-            $message = "Error al actualizar tema: " . $e->getMessage();
+            $message = "Error al actualizar PDA: " . $e->getMessage();
             $messageType = "error";
         }
         
@@ -298,8 +299,21 @@ if ($subjectId) {
                             <span>📅</span> Cronograma de Cobertura de PDAs
                         </div>
                         <p class="text-secondary" style="font-size: 13px; margin-top: -10px; margin-bottom: 20px;">
-                            El sistema ha distribuido equitativamente las <?php echo count($sessions); ?> sesiones del ciclo escolar entre los <?php echo $viewSubject['total_pdas']; ?> PDAs. Haz clic en un PDA para personalizar su tema o ver el desglose diario de sus sesiones.
+                            El sistema ha distribuido equitativamente las <?php echo count($sessions); ?> sesiones del ciclo escolar entre los <?php echo $viewSubject['total_pdas']; ?> PDAs. Haz clic en un PDA para personalizar su tema y su número de sesiones o ver el desglose diario.
                         </p>
+
+                        <?php 
+                        $pdaSessionsSum = 0;
+                        foreach ($pdaDistribution as $pdaItem) {
+                            $pdaSessionsSum += $pdaItem['sessions_count'];
+                        }
+                        $totalCycleSessions = count($sessions);
+                        if ($pdaSessionsSum !== $totalCycleSessions): 
+                        ?>
+                            <div class="alert alert-warning" style="margin-bottom: 20px; font-size: 12px; padding: 10px 14px;">
+                                ⚠️ La suma de las sesiones asignadas a los PDAs (<strong><?php echo $pdaSessionsSum; ?></strong>) no coincide con el total de sesiones de clase (<strong><?php echo $totalCycleSessions; ?></strong>). Ajusta el número de sesiones de cada PDA para cuadrar la vigencia de todo el ciclo.
+                            </div>
+                        <?php endif; ?>
 
                         <div class="pda-timeline-list">
                             <?php foreach ($pdaDistribution as $pda): ?>
@@ -334,15 +348,22 @@ if ($subjectId) {
 
                                     <!-- Cuerpo de información adicional y personalización -->
                                     <div class="pda-content-body" id="pda-body-<?php echo $pda['pda_number']; ?>" style="display: none;">
-                                        <!-- Formulario para editar el nombre del PDA -->
-                                        <form method="POST" style="display:flex; gap:8px; margin-bottom: 16px;">
+                                        <!-- Formulario para editar el nombre y sesiones del PDA -->
+                                        <form method="POST" style="display:flex; flex-direction:column; gap:8px; margin-bottom: 16px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: var(--radius); border: 1px solid var(--border);">
                                             <input type="hidden" name="action" value="save_pda_topic">
                                             <input type="hidden" name="subject_id" value="<?php echo $viewSubject['id']; ?>">
                                             <input type="hidden" name="pda_number" value="<?php echo $pda['pda_number']; ?>">
-                                            <div style="flex:1;">
-                                                <input type="text" name="topic" class="form-control" placeholder="Escribe el nombre o contenido temático de este PDA..." value="<?php echo htmlspecialchars($pda['topic']); ?>" required autocomplete="off" style="padding: 8px 12px; font-size:12px;">
+                                            <div style="display: flex; gap: 8px; width: 100%;">
+                                                <div style="flex: 3;">
+                                                    <label class="form-label" style="font-size: 11px; margin-bottom: 2px;">Nombre / Tema del PDA</label>
+                                                    <input type="text" name="topic" class="form-control" placeholder="Nombre de este PDA..." value="<?php echo htmlspecialchars($pda['topic']); ?>" required autocomplete="off" style="padding: 6px 10px; font-size:12px;">
+                                                </div>
+                                                <div style="flex: 1;">
+                                                    <label class="form-label" style="font-size: 11px; margin-bottom: 2px;">Sesiones</label>
+                                                    <input type="number" name="sessions_count" class="form-control" min="0" max="<?php echo count($sessions); ?>" value="<?php echo $pda['sessions_count']; ?>" required style="padding: 6px 10px; font-size:12px;">
+                                                </div>
                                             </div>
-                                            <button type="submit" class="btn btn-primary btn-sm">💾 Guardar Tema</button>
+                                            <button type="submit" class="btn btn-primary btn-sm" style="align-self: flex-end; padding: 6px 16px; font-size:11px;">💾 Guardar Cambios</button>
                                         </form>
 
                                         <!-- Desglose de sesiones -->

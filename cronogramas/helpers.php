@@ -108,21 +108,48 @@ function calculatePdaDistribution($sessions, $totalPDAs, $subjectId, $pdo) {
         return [];
     }
 
-    // Obtener nombres/temas guardados en la BD
-    $stmt = $pdo->prepare("SELECT pda_number, topic FROM pdas WHERE subject_id = ?");
+    // Obtener nombres/temas y número de sesiones guardados en la BD
+    $stmt = $pdo->prepare("SELECT pda_number, topic, sessions_count FROM pdas WHERE subject_id = ? ORDER BY pda_number ASC");
     $stmt->execute([$subjectId]);
-    $savedPdas = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    $savedPdas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Mapear datos cargados
+    $pdaTopics = [];
+    $pdaSessions = [];
+    foreach ($savedPdas as $row) {
+        $pdaTopics[$row['pda_number']] = $row['topic'];
+        $pdaSessions[$row['pda_number']] = $row['sessions_count'];
+    }
 
+    // Verificar si existen cantidades personalizadas
+    $hasCustomSessions = false;
+    foreach ($pdaSessions as $num => $cnt) {
+        if ($cnt !== null) {
+            $hasCustomSessions = true;
+            break;
+        }
+    }
+
+    // Determinar la cantidad de sesiones para cada PDA
+    $pdaCounts = [];
     $baseSessions = (int)floor($totalSessions / $totalPDAs);
     $remainder = $totalSessions % $totalPDAs;
+
+    for ($i = 1; $i <= $totalPDAs; $i++) {
+        if (isset($pdaSessions[$i]) && $pdaSessions[$i] !== null) {
+            $pdaCounts[$i] = (int)$pdaSessions[$i];
+        } else {
+            // Por defecto toma su parte equitativa si no tiene valor personalizado guardado
+            $pdaCounts[$i] = $baseSessions + ($i <= $remainder ? 1 : 0);
+        }
+    }
 
     $pdaDistribution = [];
     $sessionIndex = 0;
 
     for ($i = 1; $i <= $totalPDAs; $i++) {
-        // Distribuir el residuo entre los primeros PDAs
-        $pdaSessionsCount = $baseSessions + ($i <= $remainder ? 1 : 0);
-        $topic = isset($savedPdas[$i]) ? $savedPdas[$i] : "Proceso de Desarrollo de Aprendizaje (PDA) $i";
+        $pdaSessionsCount = $pdaCounts[$i];
+        $topic = isset($pdaTopics[$i]) ? $pdaTopics[$i] : "Proceso de Desarrollo de Aprendizaje (PDA) $i";
 
         if ($pdaSessionsCount > 0 && $sessionIndex < $totalSessions) {
             $startSession = $sessions[$sessionIndex];
