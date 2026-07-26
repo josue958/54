@@ -162,6 +162,11 @@ if ($subjectId) {
         if ($viewCycle) {
             // Algoritmo de cálculo
             $holidays = json_decode($viewCycle['holidays'] ?? '[]', true);
+            
+            // Períodos inhábiles personalizados de la base de datos
+            $customHolidays = getCustomHolidaysDates($viewCycle['id'], $pdo);
+            $holidays = array_unique(array_merge($holidays, $customHolidays));
+            
             $startYear = (int)date('Y', strtotime($viewCycle['start_date']));
             $excelOccupied = getExcelOccupiedDates($startYear);
             $holidays = array_unique(array_merge($holidays, $excelOccupied));

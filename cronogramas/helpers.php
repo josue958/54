@@ -295,3 +295,65 @@ function getExcelOccupiedDates($startYear) {
     
     return array_unique($occupiedDates);
 }
+
+/**
+ * Obtiene la lista plana de fechas (YYYY-MM-DD) de los períodos inhábiles personalizados.
+ *
+ * @param int $cycleId ID del ciclo escolar
+ * @param PDO $pdo Conexión a la base de datos
+ * @return array Array de fechas
+ */
+function getCustomHolidaysDates($cycleId, $pdo) {
+    try {
+        $stmt = $pdo->prepare("SELECT start_date, end_date FROM custom_holidays WHERE cycle_id = ?");
+        $stmt->execute([$cycleId]);
+        $ranges = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return [];
+    }
+    
+    $dates = [];
+    foreach ($ranges as $range) {
+        $start = new DateTime($range['start_date']);
+        $end = new DateTime($range['end_date']);
+        
+        $interval = new DateInterval('P1D');
+        $period = new DatePeriod($start, $interval, $end->modify('+1 day'));
+        
+        foreach ($period as $date) {
+            $dates[] = $date->format('Y-m-d');
+        }
+    }
+    return array_unique($dates);
+}
+
+/**
+ * Obtiene el mapa asociativo (fecha => etiqueta) de los períodos inhábiles personalizados.
+ *
+ * @param int $cycleId ID del ciclo escolar
+ * @param PDO $pdo Conexión a la base de datos
+ * @return array Mapa de fechas y etiquetas
+ */
+function getCustomHolidaysMap($cycleId, $pdo) {
+    try {
+        $stmt = $pdo->prepare("SELECT start_date, end_date, label FROM custom_holidays WHERE cycle_id = ?");
+        $stmt->execute([$cycleId]);
+        $ranges = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return [];
+    }
+    
+    $map = [];
+    foreach ($ranges as $range) {
+        $start = new DateTime($range['start_date']);
+        $end = new DateTime($range['end_date']);
+        
+        $interval = new DateInterval('P1D');
+        $period = new DatePeriod($start, $interval, $end->modify('+1 day'));
+        
+        foreach ($period as $date) {
+            $map[$date->format('Y-m-d')] = $range['label'];
+        }
+    }
+    return $map;
+}

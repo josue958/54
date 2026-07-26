@@ -49,8 +49,9 @@ try {
     // Obtener año de inicio por defecto
     $defaultStartYear = !empty($subjects) ? (int)date('Y', strtotime($subjects[0]['cycle_start_date'])) : 2026;
 
-    // Calcular el mapa de PDAs por fecha para cada materia
+    // Calcular el mapa de PDAs y períodos inhábiles por fecha para cada materia
     $subjectPdaDateMap = [];
+    $subjectCustomHolidaysMap = [];
     foreach ($subjects as $subj) {
         $schedule = json_decode($subj['schedule'] ?? '[]', true);
         
@@ -62,6 +63,12 @@ try {
         if ($cycDetails) {
             // Obtener días festivos y sumarles los ocupados por actividades del cronograma de Excel
             $holidays = json_decode($cycDetails['holidays'] ?? '[]', true);
+            
+            // Períodos inhábiles personalizados de la base de datos
+            $customHolidays = getCustomHolidaysDates($cycDetails['id'], $pdo);
+            $holidays = array_unique(array_merge($holidays, $customHolidays));
+            $subjectCustomHolidaysMap[$subj['id']] = getCustomHolidaysMap($cycDetails['id'], $pdo);
+            
             $startYear = (int)date('Y', strtotime($cycDetails['start_date']));
             $excelOccupied = getExcelOccupiedDates($startYear);
             $holidays = array_unique(array_merge($holidays, $excelOccupied));
@@ -598,6 +605,7 @@ function getMonthWithYear($monthName, $startYear = 2026) {
         }
 
         var subjectPdaDateMap = <?php echo json_encode($subjectPdaDateMap, JSON_FORCE_OBJECT); ?>;
+        var subjectCustomHolidaysMap = <?php echo json_encode($subjectCustomHolidaysMap, JSON_FORCE_OBJECT); ?>;
 
         function showCronogramaSection(startYear, subjectId, subjectName) {
             var section = document.getElementById('cronograma-excel-section');
@@ -625,6 +633,7 @@ function getMonthWithYear($monthName, $startYear = 2026) {
 
                 // 2. Clear and set PDA cells with names/topics from the database
                 var pdaDateMap = subjectPdaDateMap[subjectId] || {};
+                var customHolidaysMap = subjectCustomHolidaysMap[subjectId] || {};
                 var monthNumbers = {
                     'AGOSTO': '08', 'SEPTIEMBRE': '09', 'OCTUBRE': '10', 'NOVIEMBRE': '11', 'DICIEMBRE': '12',
                     'ENERO': '01', 'FEBRERO': '02', 'MARZO': '03', 'ABRIL': '04', 'MAYO': '05', 'JUNIO': '06', 'JULIO': '07'
@@ -681,7 +690,14 @@ function getMonthWithYear($monthName, $startYear = 2026) {
                                     }
                                     
                                     if (originalText === '' || originalText.match(/^PDA\s*\d*$/i) || cell.getAttribute('data-updated') === 'true') {
-                                        if (pdaDateMap[dateStr]) {
+                                        if (customHolidaysMap[dateStr]) {
+                                            var label = customHolidaysMap[dateStr];
+                                            cell.style.background = 'rgba(239, 68, 68, 0.12)';
+                                            cell.style.color = 'var(--color-danger)';
+                                            cell.style.border = '1px solid var(--color-danger)';
+                                            cell.innerHTML = '<strong>' + label + '</strong>';
+                                            cell.setAttribute('data-updated', 'true');
+                                        } else if (pdaDateMap[dateStr]) {
                                             var pdaNum = pdaDateMap[dateStr].pda_number;
                                             var topic = pdaDateMap[dateStr].topic;
                                             

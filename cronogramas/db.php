@@ -52,6 +52,16 @@ try {
         FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
     );");
 
+    // Crear tabla de Períodos Inhábiles Personalizados
+    $pdo->exec("CREATE TABLE IF NOT EXISTS custom_holidays (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        cycle_id INTEGER NOT NULL,
+        start_date TEXT NOT NULL, -- YYYY-MM-DD
+        end_date TEXT NOT NULL, -- YYYY-MM-DD
+        label TEXT NOT NULL, -- Etiqueta descriptiva
+        FOREIGN KEY (cycle_id) REFERENCES school_cycles(id) ON DELETE CASCADE
+    );");
+
     // Seed de ejemplo si la tabla de ciclos está vacía
     $stmt = $pdo->query("SELECT COUNT(*) as count FROM school_cycles");
     $row = $stmt->fetch();

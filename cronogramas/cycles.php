@@ -162,6 +162,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         header("Location: cycles.php?edit_id=" . $cycleId . "&msg=" . urlencode($message) . "&msg_type=" . $messageType);
         exit;
+    } elseif ($action === 'add_custom_holiday') {
+        $cycleId = $_POST['cycle_id'] ?? null;
+        $startDate = $_POST['start_date'] ?? '';
+        $endDate = $_POST['end_date'] ?? '';
+        $label = $_POST['label'] ?? '';
+
+        if ($cycleId && !empty($startDate) && !empty($endDate) && !empty($label)) {
+            try {
+                $stmt = $pdo->prepare("INSERT INTO custom_holidays (cycle_id, start_date, end_date, label) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$cycleId, $startDate, $endDate, $label]);
+                $message = "Período inhábil agregado correctamente.";
+                $messageType = "success";
+            } catch (PDOException $e) {
+                $message = "Error al guardar período inhábil: " . $e->getMessage();
+                $messageType = "error";
+            }
+        }
+        header("Location: cycles.php?edit_id=" . $cycleId . "&msg=" . urlencode($message) . "&msg_type=" . $messageType);
+        exit;
+    } elseif ($action === 'remove_custom_holiday') {
+        $cycleId = $_POST['cycle_id'] ?? null;
+        $id = $_POST['id'] ?? null;
+
+        if ($cycleId && $id) {
+            try {
+                $stmt = $pdo->prepare("DELETE FROM custom_holidays WHERE id = ?");
+                $stmt->execute([$id]);
+                $message = "Período inhábil eliminado.";
+                $messageType = "success";
+            } catch (PDOException $e) {
+                $message = "Error al eliminar período: " . $e->getMessage();
+                $messageType = "error";
+            }
+        }
+        header("Location: cycles.php?edit_id=" . $cycleId . "&msg=" . urlencode($message) . "&msg_type=" . $messageType);
+        exit;
     } elseif ($action === 'delete') {
         $cycleId = $_POST['cycle_id'] ?? null;
         if ($cycleId) {
@@ -191,11 +227,18 @@ $cycles = $pdo->query("SELECT * FROM school_cycles ORDER BY start_date DESC")->f
 
 // Cargar ciclo a editar si se solicita
 $editCycle = null;
+$editCycleCustomHolidays = [];
 $editId = $_GET['edit_id'] ?? null;
 if ($editId) {
     $stmt = $pdo->prepare("SELECT * FROM school_cycles WHERE id = ?");
     $stmt->execute([$editId]);
     $editCycle = $stmt->fetch();
+    
+    if ($editCycle) {
+        $stmtCh = $pdo->prepare("SELECT * FROM custom_holidays WHERE cycle_id = ? ORDER BY start_date ASC");
+        $stmtCh->execute([$editCycle['id']]);
+        $editCycleCustomHolidays = $stmtCh->fetchAll();
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -390,6 +433,71 @@ if ($editId) {
                                                 </form>
                                             </div>
                                         <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- Sección de Períodos Inhábiles Personalizados -->
+                            <div class="card" style="margin-top: 20px;">
+                                <div class="card-title">
+                                    <span>📅 Períodos Inhábiles Personalizados</span>
+                                </div>
+                                <p class="text-secondary" style="font-size: 11px; margin-top:-10px; margin-bottom: 12px;">Registra rangos de fechas (ej: Vacaciones de Primavera, Semana Cultural) con una etiqueta personalizada que se mostrará en el cronograma.</p>
+                                
+                                <form method="POST" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: var(--radius); border: 1px solid var(--border);">
+                                    <input type="hidden" name="action" value="add_custom_holiday">
+                                    <input type="hidden" name="cycle_id" value="<?php echo $editCycle['id']; ?>">
+                                    
+                                    <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label class="form-label" style="font-size: 10px; margin-bottom: 2px;">Fecha Inicio</label>
+                                            <input type="date" name="start_date" class="form-control" required style="padding: 6px 10px; font-size:12px;">
+                                        </div>
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label class="form-label" style="font-size: 10px; margin-bottom: 2px;">Fecha Fin</label>
+                                            <input type="date" name="end_date" class="form-control" required style="padding: 6px 10px; font-size:12px;">
+                                        </div>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 4px;">
+                                        <label class="form-label" style="font-size: 10px; margin-bottom: 2px;">Etiqueta Descriptiva</label>
+                                        <input type="text" name="label" class="form-control" placeholder="Ej. PERIODO VACACIONAL PRIMAVERA" required style="padding: 6px 10px; font-size:12px;" autocomplete="off">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-sm" style="align-self: flex-end; padding: 6px 16px;">➕ Agregar Período</button>
+                                </form>
+
+                                <?php if (empty($editCycleCustomHolidays)): ?>
+                                    <div class="empty-state" style="padding: 20px 0;">
+                                        <p style="font-size: 12px;">No hay períodos personalizados registrados.</p>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="table-container" style="max-height: 250px; overflow-y: auto;">
+                                        <table class="data-table" style="font-size: 12px;">
+                                            <thead>
+                                                <tr>
+                                                    <th>Inicio</th>
+                                                    <th>Fin</th>
+                                                    <th>Etiqueta</th>
+                                                    <th style="text-align: right;">Acción</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($editCycleCustomHolidays as $chRow): ?>
+                                                    <tr>
+                                                        <td><?php echo formatDateSpanish($chRow['start_date']); ?></td>
+                                                        <td><?php echo formatDateSpanish($chRow['end_date']); ?></td>
+                                                        <td><strong><?php echo htmlspecialchars($chRow['label']); ?></strong></td>
+                                                        <td style="text-align: right;">
+                                                            <form method="POST" style="display: inline;" onsubmit="return confirm('¿Seguro que deseas eliminar este período?');">
+                                                                <input type="hidden" name="action" value="remove_custom_holiday">
+                                                                <input type="hidden" name="cycle_id" value="<?php echo $editCycle['id']; ?>">
+                                                                <input type="hidden" name="id" value="<?php echo $chRow['id']; ?>">
+                                                                <button type="submit" class="btn btn-danger btn-sm" style="padding: 2px 6px; font-size: 10px;">✕ Eliminar</button>
+                                                            </form>
+                                                        </td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 <?php endif; ?>
                             </div>
