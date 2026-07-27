@@ -51,6 +51,12 @@ const DashboardView = (() => {
                                 : '<option value="">Sin materias en este ciclo</option>'}
                         </select>
                     </div>
+                    ${_selectedSubjectId ? `
+                    <div class="form-group" style="margin:0; display:flex; align-items:flex-end">
+                        <button class="btn btn-primary" onclick="ExcelExport.exportarCronograma(${_selectedCycleId}, ${_selectedSubjectId})" style="height:38px">
+                            <span class="nav-icon">📊</span> Exportar Excel
+                        </button>
+                    </div>` : ''}
                 </div>
             </div>
 
