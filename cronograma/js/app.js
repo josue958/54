@@ -73,39 +73,13 @@ function renderView(name, params={}) {
     }, 80);
 }
 
-function updateNavActive(active) {
-    document.querySelectorAll('.nav-link').forEach(a => {
-        a.classList.toggle('active', a.dataset.route === active);
-    });
+function updateNavActive(route) {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    const activeLink = document.querySelector(`.nav-item[data-route="${route}"]`);
+    if (activeLink) activeLink.classList.add('active');
 }
 
 function updateSidebar() {
-    const cycles   = getCycles();
-    const subjects = getSubjects();
-
-    // Sidebar: ciclos
-    const cycleList = document.getElementById('sidebar-cycles');
-    if(cycleList) {
-        cycleList.innerHTML = cycles.length
-            ? cycles.map(c => `
-                <div class="sidebar-item" onclick="navigate('cycles')">
-                    <span class="sidebar-item-icon">🗓️</span>
-                    <span class="sidebar-item-text">${escHtml(c.name)}</span>
-                </div>`).join('')
-            : '<div class="sidebar-empty">Sin ciclos</div>';
-    }
-
-    // Sidebar: materias
-    const subjList = document.getElementById('sidebar-subjects');
-    if(subjList) {
-        subjList.innerHTML = subjects.length
-            ? subjects.map((s,i) => `
-                <div class="sidebar-item" onclick="navigate('subjects/${s.id}')">
-                    <span class="sidebar-color-dot" style="background:${subjectColor(i)}"></span>
-                    <span class="sidebar-item-text">${escHtml(s.name)}</span>
-                </div>`).join('')
-            : '<div class="sidebar-empty">Sin materias</div>';
-    }
 }
 
 // ──────────────────────────────────────────

@@ -21,57 +21,46 @@
 </div>
 
 <!-- Shell de la app -->
-<div class="app-shell">
-
-  <!-- Topbar -->
-  <header class="topbar">
-    <div style="font-size:22px">📋</div>
-    <div>
-      <span class="topbar-logo">JOKARHE</span>
-      <span class="topbar-subtitle">Planeador de Ciclos y PDAs</span>
-    </div>
-    <div class="topbar-spacer"></div>
-    <div class="topbar-actions">
-      <button class="btn btn-ghost btn-sm" onclick="handleExport()" title="Exportar base de datos">💾 Exportar</button>
-      <button class="btn btn-ghost btn-sm" onclick="handleImport()" title="Importar base de datos">📂 Importar</button>
-      <button class="btn btn-ghost btn-sm" onclick="handleReset()" title="Restablecer a datos de ejemplo">🔄 Reset</button>
-    </div>
-  </header>
+<div class="app-layout">
 
   <!-- Sidebar -->
   <nav class="sidebar">
-    <div class="sidebar-nav">
-      <!-- Navegación principal -->
-      <div class="nav-section-title">Navegación</div>
-      <button class="nav-link" data-route="dashboard" onclick="navigate('#dashboard')">
-        <span class="nav-icon">🗓️</span> Cronograma
-      </button>
-      <button class="nav-link" data-route="cycles" onclick="navigate('#cycles')">
-        <span class="nav-icon">⚙️</span> Ciclos Escolares
-      </button>
-      <button class="nav-link" data-route="subjects" onclick="navigate('#subjects')">
-        <span class="nav-icon">📚</span> Materias
-      </button>
-
-      <div class="nav-divider"></div>
+    <div class="sidebar-logo">
+      <div class="logo-wrapper">📋</div>
+      <div class="sidebar-logo-text">
+        <h1>JOKARHE</h1>
+        <span class="sub-brand">CORE</span>
+      </div>
     </div>
-
-    <div class="sidebar-quick">
-      <!-- Ciclos rápidos -->
-      <div class="sidebar-quick-title">Ciclos</div>
-      <div id="sidebar-cycles"></div>
-
-      <div style="height:12px"></div>
-
-      <!-- Materias rápidas -->
-      <div class="sidebar-quick-title">Materias</div>
-      <div id="sidebar-subjects"></div>
+    <div class="sidebar-nav">
+      <div class="nav-section">
+        <a href="#dashboard" class="nav-item" data-route="dashboard" onclick="navigate('#dashboard')">
+          <span class="nav-item-icon">🗓️</span> Cronograma
+        </a>
+        <a href="#cycles" class="nav-item" data-route="cycles" onclick="navigate('#cycles')">
+          <span class="nav-item-icon">⚙️</span> Ciclos Escolares
+        </a>
+        <a href="#subjects" class="nav-item" data-route="subjects" onclick="navigate('#subjects')">
+          <span class="nav-item-icon">📚</span> Materias
+        </a>
+      </div>
     </div>
   </nav>
 
   <!-- Main content -->
-  <main class="main-content" id="main-content">
-    <!-- Renderizado por app.js -->
+  <main class="main-content">
+    <header class="topbar">
+      <h2>Planeador de Ciclos y PDAs</h2>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost btn-sm" onclick="handleExport()" title="Exportar base de datos">💾 DB</button>
+        <button class="btn btn-ghost btn-sm" onclick="handleImport()" title="Importar base de datos">📂 Importar</button>
+        <button class="btn btn-ghost btn-sm" onclick="handleReset()" title="Restablecer a datos de ejemplo">🔄 Reset</button>
+      </div>
+    </header>
+    
+    <div class="page-content" id="main-content">
+      <!-- Renderizado por app.js -->
+    </div>
   </main>
 </div>
 

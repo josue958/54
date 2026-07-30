@@ -9,22 +9,53 @@ const CyclesView = (() => {
     function render() {
         const cycles = getCycles();
         return `
-        <div class="view-layout">
-            <div class="view-sidebar-panel">
-                <div class="panel-header">
-                    <h3>Ciclos Escolares</h3>
-                    <button class="btn btn-primary btn-sm" onclick="CyclesView.openNewCycleModal()">+ Nuevo</button>
-                </div>
-                <div id="cycle-list">
-                    ${cycles.length ? cycles.map(c => `
-                        <div class="list-item ${_selectedCycleId==c.id?'active':''}" onclick="CyclesView.selectCycle(${c.id})">
-                            <div class="list-item-title">${escHtml(c.name)}</div>
-                            <div class="list-item-sub">${escHtml(c.start_date)} — ${escHtml(c.end_date||'Sin fecha fin')}</div>
-                        </div>`).join('') : '<div class="list-empty">No hay ciclos. Crea uno nuevo.</div>'}
+        <div class="grid-container">
+            <!-- Left Column: List -->
+            <div>
+                <div class="card">
+                    <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Ciclos Escolares Registrados</span>
+                        <button class="btn btn-primary btn-sm" onclick="CyclesView.openNewCycleModal()">➕ Crear</button>
+                    </div>
+                    ${cycles.length ? `
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Vigencia</th>
+                                    <th>Días Totales</th>
+                                    <th style="text-align: right;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${cycles.map(c => `
+                                <tr class="${_selectedCycleId==c.id?'active-row':''}" style="${_selectedCycleId==c.id?'background-color: var(--bg-hover);':''}; cursor:pointer;" onclick="CyclesView.selectCycle(${c.id})">
+                                    <td><strong>${escHtml(c.name)}</strong></td>
+                                    <td>
+                                        <div>${escHtml(c.start_date)}</div>
+                                        <div class="text-secondary" style="font-size: 11px;">al ${escHtml(c.end_date||'No definida')}</div>
+                                    </td>
+                                    <td><span class="badge badge-p3">${c.total_days} días</span></td>
+                                    <td style="text-align: right;">
+                                        <div style="display: inline-flex; gap: 4px;" onclick="event.stopPropagation()">
+                                            <button onclick="CyclesView.editCycle(${c.id})" class="btn btn-secondary btn-sm">✏️</button>
+                                            <button onclick="CyclesView.deleteCycleConfirm(${c.id})" class="btn btn-danger btn-sm" style="padding: 6px 8px;">🗑️</button>
+                                        </div>
+                                    </td>
+                                </tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>` : `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📅</div>
+                        <p>No hay ciclos escolares registrados. Registra uno nuevo.</p>
+                    </div>`}
                 </div>
             </div>
 
-            <div class="view-main-panel" id="cycle-detail">
+            <!-- Right Column: Details & Holidays -->
+            <div id="cycle-detail">
                 ${_selectedCycleId ? _renderCycleDetail(_selectedCycleId) : _renderPlaceholder()}
             </div>
         </div>
@@ -39,39 +70,37 @@ const CyclesView = (() => {
                 <div class="modal-body">
                     <form id="cycle-form">
                         <input type="hidden" id="cf-id">
-                        <div class="form-group">
+                        <div class="form-group" style="margin-bottom: 12px;">
                             <label class="form-label">Nombre del Ciclo</label>
                             <input id="cf-name" class="form-control" placeholder="Ej. Ciclo Escolar 2026-2027" required>
                         </div>
-                        <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
-                            <div class="form-group">
-                                <label class="form-label">Fecha de Inicio del Ciclo</label>
-                                <input id="cf-start" type="date" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Fecha de Fin del Ciclo</label>
-                                <input id="cf-end" type="date" class="form-control">
-                            </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label">Fecha de Inicio del Ciclo</label>
+                            <input id="cf-start" type="date" class="form-control" required>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Total de Días Escolares</label>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label">Fecha de Fin del Ciclo</label>
+                            <input id="cf-end" type="date" class="form-control">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label">Total de Días Hábiles de Clase</label>
                             <input id="cf-total" type="number" class="form-control" value="190" min="1" required>
                         </div>
-                        <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;gap:12px">
-                            <div class="form-group">
-                                <label class="form-label">Días Periodo 1</label>
+                        <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label">Días P1</label>
                                 <input id="cf-p1" type="number" class="form-control" value="63" min="1" required>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Días Periodo 2</label>
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label">Días P2</label>
                                 <input id="cf-p2" type="number" class="form-control" value="63" min="1" required>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Días Periodo 3</label>
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label">Días P3</label>
                                 <input id="cf-p3" type="number" class="form-control" value="64" min="1" required>
                             </div>
                         </div>
-                        <div id="cf-error" class="form-error" style="display:none"></div>
+                        <div id="cf-error" class="form-error" style="display:none; color:red; margin-bottom:10px;"></div>
                         <button type="submit" class="btn btn-primary w-full">💾 Guardar Ciclo</button>
                     </form>
                 </div>
@@ -89,11 +118,11 @@ const CyclesView = (() => {
                     <form id="holiday-form">
                         <input type="hidden" id="hf-cycle-id">
                         <input type="hidden" id="hf-edit-date">
-                        <div class="form-group">
+                        <div class="form-group" style="margin-bottom: 12px;">
                             <label class="form-label">Fecha del Día Inhábil</label>
                             <input id="hf-date" type="date" class="form-control" required>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="margin-bottom: 20px;">
                             <label class="form-label">Etiqueta / Motivo</label>
                             <input id="hf-label" class="form-control" placeholder="Ej. Independencia de México" value="Suspensión de labores" required>
                         </div>
@@ -114,17 +143,17 @@ const CyclesView = (() => {
                     <form id="custom-holiday-form">
                         <input type="hidden" id="chf-cycle-id">
                         <input type="hidden" id="chf-id">
-                        <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
-                            <div class="form-group">
+                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                            <div class="form-group" style="flex:1;">
                                 <label class="form-label">Fecha de Inicio</label>
                                 <input id="chf-start" type="date" class="form-control" required>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group" style="flex:1;">
                                 <label class="form-label">Fecha de Fin</label>
                                 <input id="chf-end" type="date" class="form-control" required>
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="margin-bottom: 20px;">
                             <label class="form-label">Etiqueta / Motivo</label>
                             <input id="chf-label" class="form-control" placeholder="Ej. Vacaciones de Primavera" required>
                         </div>
@@ -136,9 +165,12 @@ const CyclesView = (() => {
     }
 
     function _renderPlaceholder() {
-        return `<div class="placeholder-panel"><div class="placeholder-icon">🗓️</div>
+        return `
+        <div class="card" style="text-align:center; padding:40px;">
+            <div style="font-size:40px; margin-bottom:12px; opacity:0.5;">🗓️</div>
             <h3>Selecciona un ciclo escolar</h3>
-            <p>Elige un ciclo de la lista para ver y editar sus detalles.</p></div>`;
+            <p class="text-secondary">Elige un ciclo de la lista para ver y editar sus detalles y días inhábiles.</p>
+        </div>`;
     }
 
     function _renderCycleDetail(id) {
@@ -147,59 +179,49 @@ const CyclesView = (() => {
         const hmap  = getHolidaysMap(id);
         const clist = getCustomHolidays(id);
         return `
-        <div class="detail-section">
-            <div class="detail-header">
-                <div>
-                    <h2 style="margin:0">${escHtml(c.name)}</h2>
-                    <div class="text-muted" style="font-size:13px;margin-top:4px">
-                        ${escHtml(c.start_date)} — ${escHtml(c.end_date||'Sin fecha fin')} &nbsp;|&nbsp; ${c.total_days} días escolares
-                    </div>
+        <div class="card">
+            <div class="card-title">Detalles: ${escHtml(c.name)}</div>
+            
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom:20px;">
+                <div class="stat-card" style="padding:10px; gap:10px;">
+                    <div class="stat-details"><span class="stat-value" style="font-size:1.2rem;">${c.period1_days}</span><span class="stat-label">Días P1</span></div>
                 </div>
-                <div style="display:flex;gap:8px">
-                    <button class="btn btn-secondary btn-sm" onclick="CyclesView.editCycle(${id})">✏️ Editar</button>
-                    <button class="btn btn-danger btn-sm" onclick="CyclesView.deleteCycleConfirm(${id})">🗑️ Eliminar</button>
+                <div class="stat-card" style="padding:10px; gap:10px;">
+                    <div class="stat-details"><span class="stat-value" style="font-size:1.2rem;">${c.period2_days}</span><span class="stat-label">Días P2</span></div>
                 </div>
-            </div>
-
-            <div class="stats-row">
-                <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-details">
-                    <span class="stat-value">${c.period1_days}</span><span class="stat-label">Días P1</span></div></div>
-                <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-details">
-                    <span class="stat-value">${c.period2_days}</span><span class="stat-label">Días P2</span></div></div>
-                <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-details">
-                    <span class="stat-value">${c.period3_days}</span><span class="stat-label">Días P3</span></div></div>
-                <div class="stat-card"><div class="stat-icon">🚫</div><div class="stat-details">
-                    <span class="stat-value">${Object.keys(hmap).length}</span><span class="stat-label">Días Inhábiles</span></div></div>
+                <div class="stat-card" style="padding:10px; gap:10px;">
+                    <div class="stat-details"><span class="stat-value" style="font-size:1.2rem;">${c.period3_days}</span><span class="stat-label">Días P3</span></div>
+                </div>
             </div>
 
             <!-- Días Inhábiles -->
-            <div class="card">
-                <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-                    <span>🚫 Días Inhábiles (Festivos)</span>
-                    <button class="btn btn-primary btn-sm" onclick="CyclesView.openHolidayModal(${id})">+ Agregar</button>
-                </div>
-                ${Object.keys(hmap).length ? `
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center; font-size:14px; margin-top:20px;">
+                <span>🚫 Días Inhábiles (Festivos)</span>
+                <button class="btn btn-primary btn-sm" onclick="CyclesView.openHolidayModal(${id})">+ Agregar</button>
+            </div>
+            ${Object.keys(hmap).length ? `
+            <div class="table-container">
                 <table class="data-table">
                     <thead><tr><th>Fecha</th><th>Etiqueta</th><th></th></tr></thead>
                     <tbody>
                     ${Object.entries(hmap).sort(([a],[b])=>a.localeCompare(b)).map(([date,label]) => `
                         <tr>
                             <td>${escHtml(date)}</td>
-                            <td><input class="form-control inline-input" value="${escHtml(label)}" 
+                            <td><input class="form-control" style="padding:6px; font-size:12px;" value="${escHtml(label)}" 
                                 data-cycle="${id}" data-date="${escHtml(date)}" onchange="CyclesView.updateHolidayLabel(this)"></td>
-                            <td><button class="btn btn-danger btn-sm" onclick="CyclesView.removeHolidayConfirm(${id},'${escHtml(date)}')">🗑️</button></td>
+                            <td style="text-align:right;"><button class="btn btn-danger btn-sm" onclick="CyclesView.removeHolidayConfirm(${id},'${escHtml(date)}')">🗑️</button></td>
                         </tr>`).join('')}
                     </tbody>
-                </table>` : '<p class="text-muted text-center" style="padding:20px">No hay días inhábiles registrados.</p>'}
-            </div>
+                </table>
+            </div>` : '<div class="empty-state"><p>No hay días inhábiles registrados.</p></div>'}
 
             <!-- Períodos Inhábiles -->
-            <div class="card">
-                <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-                    <span>📆 Períodos Inhábiles Personalizados</span>
-                    <button class="btn btn-primary btn-sm" onclick="CyclesView.openCustomHolidayModal(${id})">+ Agregar</button>
-                </div>
-                ${clist.length ? `
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center; font-size:14px; margin-top:20px;">
+                <span>📆 Períodos Inhábiles Personalizados</span>
+                <button class="btn btn-primary btn-sm" onclick="CyclesView.openCustomHolidayModal(${id})">+ Agregar</button>
+            </div>
+            ${clist.length ? `
+            <div class="table-container">
                 <table class="data-table">
                     <thead><tr><th>Desde</th><th>Hasta</th><th>Etiqueta</th><th></th></tr></thead>
                     <tbody>
@@ -208,14 +230,14 @@ const CyclesView = (() => {
                             <td>${escHtml(r.start_date)}</td>
                             <td>${escHtml(r.end_date)}</td>
                             <td>${escHtml(r.label)}</td>
-                            <td style="display:flex;gap:6px">
+                            <td style="display:flex;gap:6px; justify-content:flex-end;">
                                 <button class="btn btn-secondary btn-sm" onclick="CyclesView.editCustomHoliday(${r.id},${id})">✏️</button>
                                 <button class="btn btn-danger btn-sm" onclick="CyclesView.deleteCustomHolidayConfirm(${r.id},${id})">🗑️</button>
                             </td>
                         </tr>`).join('')}
                     </tbody>
-                </table>` : '<p class="text-muted text-center" style="padding:20px">No hay períodos personalizados.</p>'}
-            </div>
+                </table>
+            </div>` : '<div class="empty-state"><p>No hay períodos personalizados.</p></div>'}
         </div>`;
     }
 

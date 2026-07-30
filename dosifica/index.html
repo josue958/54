@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JOKARHE CORE — Dosificador NEM (Fase 6)</title>
+    <!-- Google Fonts Inter -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- SQL.js (SQLite WASM) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+    <!-- ExcelJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+</head>
+<body>
+    <header class="app-header">
+        <a href="../" class="header-brand">
+            <span class="logo">📋</span>
+            <h1>JOKARHE CORE <span>— Dosificador NEM</span></h1>
+        </a>
+        <nav class="nav-tabs">
+            <button class="nav-tab-btn active" data-target="tab-dosificar">⚡ Dosificar</button>
+            <button class="nav-tab-btn" data-target="tab-planeaciones">📚 Planeaciones</button>
+            <button class="nav-tab-btn" data-target="tab-ciclos">📅 Ciclos Escolares</button>
+            <button class="nav-tab-btn" data-target="tab-respaldo">💾 Respaldo</button>
+        </nav>
+    </header>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <main class="main-container">
+
+        <!-- ==================== TAB 1: DOSIFICAR ==================== -->
+        <section id="tab-dosificar" class="tab-section">
+            <!-- Vista de Configuración Inicial (si no hay planeación cargada) -->
+            <div id="dosificar-setup" class="card-2xl bg-grid-pattern">
+                <div style="max-width: 600px; margin: 0 auto; text-align: center;">
+                    <span style="font-size: 48px; display: block; margin-bottom: 16px;">⚡</span>
+                    <h2>Dosificador NEM (Fase 6)</h2>
+                    <p class="subtitle">Genera la tabla de dosificación y distribución de sesiones de tus asignaturas. Selecciona un ciclo y una disciplina para iniciar la planificación.</p>
+                </div>
+                
+                <div style="max-width: 700px; margin: 32px auto 0;">
+                    <form id="setup-plan-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Ciclo Escolar</label>
+                                <select id="setup-cycle" class="form-control" required>
+                                    <option value="">Seleccionar ciclo...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Disciplina / Asignatura</label>
+                                <select id="setup-discipline" class="form-control" required>
+                                    <option value="">Seleccionar disciplina...</option>
+                                    <option value="Español">Español</option>
+                                    <option value="Matemáticas">Matemáticas</option>
+                                    <option value="Ciencias (Biología/Física/Química)">Ciencias (Biología/Física/Química)</option>
+                                    <option value="Historia">Historia</option>
+                                    <option value="Geografía">Geografía</option>
+                                    <option value="Inglés">Inglés</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Grado de Secundaria</label>
+                                <select id="setup-grade" class="form-control" required>
+                                    <option value="">Seleccionar grado...</option>
+                                    <option value="1">1º Grado</option>
+                                    <option value="2">2º Grado</option>
+                                    <option value="3">3º Grado</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-grid" style="grid-template-columns: 1fr; margin-bottom: 16px;">
+                            <div class="form-group">
+                                <label class="form-label">Horas Semanales (1 a 8)</label>
+                                <input type="number" id="setup-weekly-hours" class="form-control" min="1" max="8" value="4" required style="max-width: 200px;">
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 24px;">
+                            <label class="form-label">Horario Semanal (Distribución de horas por día)</label>
+                            <div class="schedule-grid">
+                                <div class="schedule-day">
+                                    <label>Lun</label>
+                                    <input type="number" id="setup-day-1" class="day-input" min="0" max="6" value="1" required>
+                                </div>
+                                <div class="schedule-day">
+                                    <label>Mar</label>
+                                    <input type="number" id="setup-day-2" class="day-input" min="0" max="6" value="1" required>
+                                </div>
+                                <div class="schedule-day">
+                                    <label>Mié</label>
+                                    <input type="number" id="setup-day-3" class="day-input" min="0" max="6" value="1" required>
+                                </div>
+                                <div class="schedule-day">
+                                    <label>Jue</label>
+                                    <input type="number" id="setup-day-4" class="day-input" min="0" max="6" value="1" required>
+                                </div>
+                                <div class="schedule-day">
+                                    <label>Vie</label>
+                                    <input type="number" id="setup-day-5" class="day-input" min="0" max="6" value="0" required>
+                                </div>
+                            </div>
+                            <div id="setup-schedule-error" class="alert alert-error" style="display:none; padding:10px 14px; margin-top:12px; font-size:12px;">
+                                La suma de horas diarias no coincide con las horas semanales.
+                            </div>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 32px;">
+                            <button type="submit" id="setup-submit-btn" class="btn btn-primary" style="padding: 14px 40px; font-size: 1rem;">
+                                🚀 Iniciar Dosificación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Vista del Planificador e Interactividad de PDAs (se muestra al cargar planeación) -->
+            <div id="dosificar-planner" class="card-2xl" style="display: none;">
+                <div class="planner-header">
+                    <div>
+                        <h2 id="planner-subject-title">Dosificación: Matemáticas 1º</h2>
+                        <p class="subtitle" style="margin-bottom: 0;">Organización de los Procesos de Desarrollo de Aprendizaje (PDA).</p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="planner-btn-back" class="btn btn-secondary">← Volver</button>
+                        <button id="planner-btn-export" class="btn btn-success">📊 Exportar a Excel</button>
+                        <button id="planner-btn-save" class="btn btn-primary">💾 Guardar Cambios</button>
+                    </div>
+                </div>
+
+                <!-- Resumen de Planificación y Balance de Horas -->
+                <div class="planner-summary-bar">
+                    <div class="summary-pill">
+                        📅 Ciclo: <strong id="summary-cycle-name">Ciclo 2026-2027</strong>
+                    </div>
+                    <div class="summary-pill">
+                        ⏰ Horas Semanales: <strong id="summary-weekly-hours">5hs</strong>
+                    </div>
+                    <div class="summary-pill">
+                        🎯 Total Sesiones: <strong id="summary-total-sessions">190</strong>
+                    </div>
+                    <div id="summary-balance-pill" class="summary-pill success">
+                        ⚖️ Asignado: <strong id="summary-assigned-sessions">190 / 190</strong>
+                    </div>
+                </div>
+
+                <!-- Tabla de Planeación de PDAs -->
+                <div class="table-responsive">
+                    <table class="custom-table" id="planner-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px; text-align: center;">No.</th>
+                                <th style="width: 150px;">Verbo Rector</th>
+                                <th>Proceso de Desarrollo de Aprendizaje (PDA)</th>
+                                <th style="width: 120px; text-align: center;">Sesiones</th>
+                                <th style="width: 80px; text-align: center;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="planner-tbody">
+                            <!-- Inyectado dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 24px; display:flex; justify-content:space-between; align-items:center;">
+                    <button id="planner-btn-add-pda" class="btn btn-secondary btn-sm">➕ Agregar Fila de PDA</button>
+                    <div id="planner-balance-msg" style="font-size: 13px; font-weight: 600;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: MIS PLANEACIONES ==================== -->
+        <section id="tab-planeaciones" class="tab-section" style="display: none;">
+            <div class="card-2xl">
+                <h2>Mis Planeaciones</h2>
+                <p class="subtitle">Listado de dosificaciones configuradas. Puedes editar sus parámetros, cargar su tabla de PDAs o exportarlas directamente.</p>
+                
+                <div id="planeaciones-list-container">
+                    <!-- Tabla de Planeaciones -->
+                    <div class="table-responsive">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Disciplina</th>
+                                    <th>Grado</th>
+                                    <th>Ciclo Escolar</th>
+                                    <th>Horario Semanal</th>
+                                    <th>Total PDAs</th>
+                                    <th style="text-align: right;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="planeaciones-tbody">
+                                <!-- Inyectado dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: CICLOS ESCOLARES ==================== -->
+        <section id="tab-ciclos" class="tab-section" style="display: none;">
+            <div class="grid-container">
+                <!-- Listado de Ciclos -->
+                <div class="card-lg">
+                    <h3>Ciclos Registrados</h3>
+                    <p class="subtitle" style="font-size:0.8rem; margin-bottom: 16px;">Lista de ciclos escolares disponibles en el sistema.</p>
+                    
+                    <div class="table-responsive" style="margin-top: 0;">
+                        <table class="custom-table" style="font-size: 0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th>Ciclo</th>
+                                    <th>Inicio</th>
+                                    <th>Días</th>
+                                    <th style="text-align: right;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cycles-tbody">
+                                <!-- Inyectado dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Formulario y Días Festivos -->
+                <div>
+                    <div class="card-lg">
+                        <h3 id="cycle-form-title">Agregar Ciclo Escolar</h3>
+                        <form id="cycle-crud-form" style="margin-top: 16px;">
+                            <input type="hidden" id="cycle-id">
+                            
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label class="form-label">Nombre del Ciclo</label>
+                                <input type="text" id="cycle-name" class="form-control" placeholder="Ej. Ciclo Escolar 2026-2027" required autocomplete="off">
+                            </div>
+                            <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                                <div class="form-group">
+                                    <label class="form-label">Inicio Clases</label>
+                                    <input type="date" id="cycle-start-date" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Fin Clases</label>
+                                    <input type="date" id="cycle-end-date" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label">Días Hábiles del Ciclo</label>
+                                <input type="number" id="cycle-total-days" class="form-control" min="50" max="300" value="190" required>
+                            </div>
+                            
+                            <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                                <div class="form-group" style="flex:1;">
+                                    <label class="form-label">Días P1</label>
+                                    <input type="number" id="cycle-p1-days" class="form-control" value="63" required>
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label class="form-label">Días P2</label>
+                                    <input type="number" id="cycle-p2-days" class="form-control" value="63" required>
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label class="form-label">Días P3</label>
+                                    <input type="number" id="cycle-p3-days" class="form-control" value="64" required>
+                                </div>
+                            </div>
+
+                            <div style="display:flex; gap: 8px;">
+                                <button type="submit" class="btn btn-primary" style="flex:1;">💾 Guardar Ciclo</button>
+                                <button type="button" id="btn-cancel-cycle-edit" class="btn btn-secondary" style="display:none;">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Gestión de Días Inhábiles -->
+                    <div id="cycle-holidays-card" class="card-lg" style="display:none;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <h3>Días Festivos / Inhábiles</h3>
+                            <button id="btn-load-mx-holidays" class="btn btn-secondary btn-sm">Cargar Oficiales MX</button>
+                        </div>
+                        <p class="subtitle" style="font-size:0.8rem; margin-top:-6px;">Añade festivos para excluirlos del calendario de sesiones.</p>
+                        
+                        <form id="holiday-add-form" style="display: flex; gap: 8px; margin-bottom: 16px;">
+                            <input type="date" id="holiday-date" class="form-control" required style="padding:6px 12px;">
+                            <input type="text" id="holiday-label" class="form-control" placeholder="Motivo/Nombre..." required style="padding:6px 12px;">
+                            <button type="submit" class="btn btn-primary btn-sm">➕ Añadir</button>
+                        </form>
+
+                        <div class="holidays-grid" id="cycle-holidays-list" style="max-height: 200px; overflow-y: auto;">
+                            <!-- Inyectado dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 4: COPIA DE SEGURIDAD ==================== -->
+        <section id="tab-respaldo" class="tab-section" style="display: none;">
+            <div class="card-2xl">
+                <h2>Copia de Seguridad y Configuración</h2>
+                <p class="subtitle">Respalda tus planeaciones locales, restaura bases de datos anteriores o reinicia el sistema al estado por defecto.</p>
+
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 32px;">
+                    <!-- Backup -->
+                    <div style="border: 1px solid var(--border-color); padding: 24px; border-radius: var(--radius-lg);">
+                        <h4>Exportar Base de Datos</h4>
+                        <p class="subtitle" style="font-size: 0.85rem; margin-bottom: 20px;">Descarga un archivo `.sqlite` con toda la información guardada localmente para respaldarla.</p>
+                        <button id="btn-export-db" class="btn btn-primary">📥 Descargar Respaldo (.sqlite)</button>
+                    </div>
+
+                    <!-- Restore -->
+                    <div style="border: 1px solid var(--border-color); padding: 24px; border-radius: var(--radius-lg);">
+                        <h4>Importar Base de Datos</h4>
+                        <p class="subtitle" style="font-size: 0.85rem; margin-bottom: 20px;">Sube un archivo de base de datos `.sqlite` previamente exportado para restaurar tu información.</p>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="file" id="import-db-file" accept=".sqlite" style="display: none;">
+                            <button id="btn-trigger-import" class="btn btn-secondary">📁 Seleccionar Archivo</button>
+                            <button id="btn-import-db" class="btn btn-success" disabled>📤 Restaurar Datos</button>
+                        </div>
+                        <span id="import-file-name" style="display:block; margin-top:8px; font-size:12px; font-weight:600;">Ningún archivo seleccionado</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 32px; border-top: 1px solid var(--border-color); padding-top: 24px; text-align: right;">
+                    <button id="btn-reset-db" class="btn btn-danger btn-sm">⚠️ Restablecer Base de Datos por Defecto</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal para editar parámetros de una planeación existente -->
+    <div class="modal-overlay" id="edit-plan-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Editar Parámetros de Planeación</h3>
+                <button class="btn-ghost" onclick="closeEditPlanModal()" style="font-size: 20px; border:none; background:none; cursor:pointer;">✕</button>
+            </div>
+            <form id="edit-plan-form">
+                <input type="hidden" id="edit-plan-id">
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label class="form-label">Disciplina / Asignatura</label>
+                    <input type="text" id="edit-plan-discipline" class="form-control" required autocomplete="off">
+                </div>
+
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                    <div class="form-group">
+                        <label class="form-label">Ciclo Escolar</label>
+                        <select id="edit-plan-cycle" class="form-control" required>
+                            <!-- Inyectado dinámicamente -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Grado</label>
+                        <select id="edit-plan-grade" class="form-control" required>
+                            <option value="1">1º Grado</option>
+                            <option value="2">2º Grado</option>
+                            <option value="3">3º Grado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label class="form-label">Horas Semanales (1 a 8)</label>
+                    <input type="number" id="edit-plan-weekly-hours" class="form-control" min="1" max="8" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label class="form-label">Horario Semanal</label>
+                    <div class="schedule-grid">
+                        <div class="schedule-day">
+                            <label>Lun</label>
+                            <input type="number" id="edit-plan-day-1" class="day-input" min="0" max="6" required>
+                        </div>
+                        <div class="schedule-day">
+                            <label>Mar</label>
+                            <input type="number" id="edit-plan-day-2" class="day-input" min="0" max="6" required>
+                        </div>
+                        <div class="schedule-day">
+                            <label>Mié</label>
+                            <input type="number" id="edit-plan-day-3" class="day-input" min="0" max="6" required>
+                        </div>
+                        <div class="schedule-day">
+                            <label>Jue</label>
+                            <input type="number" id="edit-plan-day-4" class="day-input" min="0" max="6" required>
+                        </div>
+                        <div class="schedule-day">
+                            <label>Vie</label>
+                            <input type="number" id="edit-plan-day-5" class="day-input" min="0" max="6" required>
+                        </div>
+                    </div>
+                    <div id="edit-plan-schedule-error" class="alert alert-error" style="display:none; padding:10px 14px; margin-top:12px; font-size:12px;">
+                        La suma del horario no coincide con las horas semanales.
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditPlanModal()">Cancelar</button>
+                    <button type="submit" id="edit-plan-submit-btn" class="btn btn-primary">💾 Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cargar Scripts de la Aplicación -->
+    <script src="js/pda_data.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/excel.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
