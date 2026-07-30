@@ -167,20 +167,26 @@ function initSetupForm() {
             if (libPdas.length > 0) {
                 for (let i = 0; i < libPdas.length; i++) {
                     const text = libPdas[i];
-                    const pdaNum = i + 1;
-                    const verb = getRectorVerb(text);
-                    const sCount = baseSessions + (pdaNum <= remainder ? 1 : 0);
+                    const isObj = (typeof text === 'object' && text !== null);
+                    const pdaTopic = isObj ? text.topic : text;
+                    const pdaNum = isObj ? (text.pda_number || (i + 1)) : (i + 1);
+                    const verb = isObj ? (text.verbo_rector || getRectorVerb(pdaTopic)) : getRectorVerb(pdaTopic);
+                    const sCount = isObj ? (text.sessions_count || (baseSessions + (pdaNum <= remainder ? 1 : 0))) : (baseSessions + (pdaNum <= remainder ? 1 : 0));
+                    const pdaContenido = isObj ? (text.contenido || '') : '';
+                    const pdaTemas = isObj ? (text.temas || '') : '';
+                    const pdaComplejidad = isObj ? (text.complejidad || 'Media') : 'Media';
+                    const pdaRango = isObj ? (text.rango_sugerido || '') : '';
 
                     await dbRun(
-                        `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count) VALUES(?,?,?,?,?)`,
-                        [pid, pdaNum, text, verb, sCount]
+                        `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count, contenido, temas, complejidad, rango_sugerido) VALUES(?,?,?,?,?,?,?,?,?)`,
+                        [pid, pdaNum, pdaTopic, verb, sCount, pdaContenido, pdaTemas, pdaComplejidad, pdaRango]
                     );
                 }
             } else {
                 // PDA en blanco por si no hay biblioteca
                 await dbRun(
-                    `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count) VALUES(?,?,?,?,?)`,
-                    [pid, 1, 'Proceso de Desarrollo de Aprendizaje (PDA) 1', 'Desarrolla', totalSessions]
+                    `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count, contenido, temas, complejidad, rango_sugerido) VALUES(?,?,?,?,?,?,?,?,?)`,
+                    [pid, 1, 'Proceso de Desarrollo de Aprendizaje (PDA) 1', 'Desarrolla', totalSessions, '', '', 'Media', '']
                 );
             }
 
@@ -267,18 +273,34 @@ function renderPdaRows(pdas, totalSessions) {
         const tr = document.createElement('tr');
         tr.setAttribute('data-pda-number', pda.pda_number);
         tr.innerHTML = `
-            <td style="text-align: center; font-weight: 800;">${pda.pda_number}</td>
             <td>
-                <input type="text" class="form-control pda-verb" value="${htmlspecialchars(pda.verbo_rector)}" placeholder="Verbo" style="padding: 8px 12px; font-weight: 600;">
+                <textarea class="form-control pda-contenido" placeholder="Contenido" rows="2" style="padding: 6px 8px; resize: vertical; font-size: 0.8rem; height: 50px; font-weight: 500;">${htmlspecialchars(pda.contenido || '')}</textarea>
+            </td>
+            <td style="text-align: center; font-weight: 800; font-size: 0.85rem;">${pda.pda_number}</td>
+            <td>
+                <textarea class="form-control pda-topic" placeholder="Proceso de Desarrollo de Aprendizaje (PDA)" rows="2" style="padding: 6px 8px; resize: vertical; font-size: 0.8rem; height: 50px;">${htmlspecialchars(pda.topic)}</textarea>
             </td>
             <td>
-                <textarea class="form-control pda-topic" placeholder="Proceso de Desarrollo de Aprendizaje (PDA)" rows="2" style="padding: 8px 12px; resize: vertical;">${htmlspecialchars(pda.topic)}</textarea>
+                <textarea class="form-control pda-temas" placeholder="Temas a Atender" rows="2" style="padding: 6px 8px; resize: vertical; font-size: 0.8rem; height: 50px;">${htmlspecialchars(pda.temas || '')}</textarea>
             </td>
             <td>
-                <input type="number" class="form-control pda-sessions" value="${pda.sessions_count}" min="0" max="${totalSessions}" style="padding: 8px 12px; text-align: center; font-weight: 700;">
+                <input type="number" class="form-control pda-sessions" value="${pda.sessions_count}" min="0" max="${totalSessions}" style="padding: 6px 8px; text-align: center; font-weight: 700; font-size: 0.8rem;">
+            </td>
+            <td>
+                <input type="text" class="form-control pda-verb" value="${htmlspecialchars(pda.verbo_rector)}" placeholder="Verbo" style="padding: 6px 8px; font-weight: 600; font-size: 0.8rem;">
+            </td>
+            <td>
+                <select class="form-control pda-complejidad" style="padding: 4px 6px; font-size: 0.8rem; height: auto;">
+                    <option value="Baja" ${pda.complejidad === 'Baja' ? 'selected' : ''}>Baja</option>
+                    <option value="Media" ${pda.complejidad === 'Media' || !pda.complejidad ? 'selected' : ''}>Media</option>
+                    <option value="Alta" ${pda.complejidad === 'Alta' ? 'selected' : ''}>Alta</option>
+                </select>
+            </td>
+            <td>
+                <input type="text" class="form-control pda-rango" value="${htmlspecialchars(pda.rango_sugerido || '')}" placeholder="Ej. 8 a 10 sesiones" style="padding: 6px 8px; font-size: 0.8rem;">
             </td>
             <td style="text-align: center;">
-                <button class="btn btn-danger btn-sm pda-delete-btn">🗑️</button>
+                <button class="btn btn-danger btn-sm pda-delete-btn" style="padding: 4px 8px;">🗑️</button>
             </td>
         `;
 
@@ -312,7 +334,7 @@ function reindexPdaNumbers() {
     rows.forEach((row, index) => {
         const newNum = index + 1;
         row.setAttribute('data-pda-number', newNum);
-        row.firstElementChild.innerText = newNum;
+        row.children[1].innerText = newNum;
     });
 }
 
@@ -354,18 +376,34 @@ function addNewPdaRow(planeacionId) {
     const tr = document.createElement('tr');
     tr.setAttribute('data-pda-number', nextNum);
     tr.innerHTML = `
-        <td style="text-align: center; font-weight: 800;">${nextNum}</td>
         <td>
-            <input type="text" class="form-control pda-verb" value="" placeholder="Verbo" style="padding: 8px 12px; font-weight: 600;">
+            <textarea class="form-control pda-contenido" placeholder="Contenido" rows="2" style="padding: 6px 8px; resize: vertical; font-size: 0.8rem; height: 50px; font-weight: 500;"></textarea>
+        </td>
+        <td style="text-align: center; font-weight: 800; font-size: 0.85rem;">${nextNum}</td>
+        <td>
+            <textarea class="form-control pda-topic" placeholder="PDA" rows="2" style="padding: 6px 8px; resize: vertical; font-size: 0.8rem; height: 50px;"></textarea>
         </td>
         <td>
-            <textarea class="form-control pda-topic" placeholder="Proceso de Desarrollo de Aprendizaje (PDA)" rows="2" style="padding: 8px 12px; resize: vertical;"></textarea>
+            <textarea class="form-control pda-temas" placeholder="Temas a Atender" rows="2" style="padding: 6px 8px; resize: vertical; font-size: 0.8rem; height: 50px;"></textarea>
         </td>
         <td>
-            <input type="number" class="form-control pda-sessions" value="0" min="0" max="${totalSessions}" style="padding: 8px 12px; text-align: center; font-weight: 700;">
+            <input type="number" class="form-control pda-sessions" value="0" min="0" max="${totalSessions}" style="padding: 6px 8px; text-align: center; font-weight: 700; font-size: 0.8rem;">
+        </td>
+        <td>
+            <input type="text" class="form-control pda-verb" value="" placeholder="Verbo" style="padding: 6px 8px; font-weight: 600; font-size: 0.8rem;">
+        </td>
+        <td>
+            <select class="form-control pda-complejidad" style="padding: 4px 6px; font-size: 0.8rem; height: auto;">
+                <option value="Baja">Baja</option>
+                <option value="Media" selected>Media</option>
+                <option value="Alta">Alta</option>
+            </select>
+        </td>
+        <td>
+            <input type="text" class="form-control pda-rango" value="" placeholder="Ej. 8 a 10 sesiones" style="padding: 6px 8px; font-size: 0.8rem;">
         </td>
         <td style="text-align: center;">
-            <button class="btn btn-danger btn-sm pda-delete-btn">🗑️</button>
+            <button class="btn btn-danger btn-sm pda-delete-btn" style="padding: 4px 8px;">🗑️</button>
         </td>
     `;
 
@@ -402,17 +440,21 @@ async function savePdaPlannerChanges(planeacionId, totalSessions) {
         for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
             const pdaNum = i + 1;
-            const verb = row.querySelector('.pda-verb').value.trim();
+            const contenido = row.querySelector('.pda-contenido').value.trim();
             const topic = row.querySelector('.pda-topic').value.trim();
+            const temas = row.querySelector('.pda-temas').value.trim();
             const sCount = parseInt(row.querySelector('.pda-sessions').value) || 0;
+            const verb = row.querySelector('.pda-verb').value.trim();
+            const complejidad = row.querySelector('.pda-complejidad').value;
+            const rango = row.querySelector('.pda-rango').value.trim();
 
             if (!topic) {
                 throw new Error(`El texto del PDA ${pdaNum} no puede estar vacío.`);
             }
 
             await dbRun(
-                `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count) VALUES(?,?,?,?,?)`,
-                [planeacionId, pdaNum, topic, verb, sCount]
+                `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count, contenido, temas, complejidad, rango_sugerido) VALUES(?,?,?,?,?,?,?,?,?)`,
+                [planeacionId, pdaNum, topic, verb, sCount, contenido, temas, complejidad, rango]
             );
         }
 
@@ -548,19 +590,25 @@ function initPlanCRUD() {
                 if (libPdas.length > 0) {
                     for (let i = 0; i < libPdas.length; i++) {
                         const text = libPdas[i];
-                        const pdaNum = i + 1;
-                        const verb = getRectorVerb(text);
-                        const sCount = baseSessions + (pdaNum <= remainder ? 1 : 0);
+                        const isObj = (typeof text === 'object' && text !== null);
+                        const pdaTopic = isObj ? text.topic : text;
+                        const pdaNum = isObj ? (text.pda_number || (i + 1)) : (i + 1);
+                        const verb = isObj ? (text.verbo_rector || getRectorVerb(pdaTopic)) : getRectorVerb(pdaTopic);
+                        const sCount = isObj ? (text.sessions_count || (baseSessions + (pdaNum <= remainder ? 1 : 0))) : (baseSessions + (pdaNum <= remainder ? 1 : 0));
+                        const pdaContenido = isObj ? (text.contenido || '') : '';
+                        const pdaTemas = isObj ? (text.temas || '') : '';
+                        const pdaComplejidad = isObj ? (text.complejidad || 'Media') : 'Media';
+                        const pdaRango = isObj ? (text.rango_sugerido || '') : '';
 
                         await dbRun(
-                            `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count) VALUES(?,?,?,?,?)`,
-                            [newId, pdaNum, text, verb, sCount]
+                            `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count, contenido, temas, complejidad, rango_sugerido) VALUES(?,?,?,?,?,?,?,?,?)`,
+                            [newId, pdaNum, pdaTopic, verb, sCount, pdaContenido, pdaTemas, pdaComplejidad, pdaRango]
                         );
                     }
                 } else {
                     await dbRun(
-                        `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count) VALUES(?,?,?,?,?)`,
-                        [newId, 1, 'Proceso de Desarrollo de Aprendizaje (PDA) 1', 'Desarrolla', totalSessions]
+                        `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count, contenido, temas, complejidad, rango_sugerido) VALUES(?,?,?,?,?,?,?,?,?)`,
+                        [newId, 1, 'Proceso de Desarrollo de Aprendizaje (PDA) 1', 'Desarrolla', totalSessions, '', '', 'Media', '']
                     );
                 }
 

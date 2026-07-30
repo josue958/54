@@ -68,12 +68,27 @@ function _initSchema() {
         topic TEXT NOT NULL,
         verbo_rector TEXT NOT NULL,
         sessions_count INTEGER NOT NULL,
+        contenido TEXT NOT NULL DEFAULT '',
+        temas TEXT NOT NULL DEFAULT '',
+        complejidad TEXT NOT NULL DEFAULT '',
+        rango_sugerido TEXT NOT NULL DEFAULT '',
         FOREIGN KEY (planeacion_id) REFERENCES planeaciones(id) ON DELETE CASCADE
     );`);
 }
 
 function _runMigrations() {
-    // Para futuras actualizaciones si es necesario
+    try {
+        _db.run("ALTER TABLE planeacion_pdas ADD COLUMN contenido TEXT NOT NULL DEFAULT ''");
+    } catch(e){}
+    try {
+        _db.run("ALTER TABLE planeacion_pdas ADD COLUMN temas TEXT NOT NULL DEFAULT ''");
+    } catch(e){}
+    try {
+        _db.run("ALTER TABLE planeacion_pdas ADD COLUMN complejidad TEXT NOT NULL DEFAULT ''");
+    } catch(e){}
+    try {
+        _db.run("ALTER TABLE planeacion_pdas ADD COLUMN rango_sugerido TEXT NOT NULL DEFAULT ''");
+    } catch(e){}
 }
 
 function _seedData() {

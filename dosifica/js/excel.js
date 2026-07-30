@@ -45,18 +45,83 @@ const ExcelExport = (() => {
             ws.getCell('D4').value = disciplinaStr;
             ws.getCell('AD4').value = disciplinaStr;
 
-            // 4. Limpiar filas de calendario (fila 6 a 60)
+            // 4. Limpiar columnas de calendario (columna I/9 en adelante, fila 6 a 60)
             for (let r = 6; r <= 60; r++) {
                 const row = ws.getRow(r);
-                row.values = [];
+                for (let col = 9; col <= 60; col++) {
+                    row.getCell(col).value = null;
+                    row.getCell(col).fill = { type: 'pattern', pattern: 'none' };
+                    row.getCell(col).border = { top: null, bottom: null, left: null, right: null };
+                }
             }
 
-            // Eliminar merges existentes desde la fila 6 en adelante
+            // Escribir cabeceras de la tabla de PDAs en fila 5 (A-H)
+            const headers = [
+                "CONTENIDO",
+                "No PROGR. PDA",
+                "PROCESOS DE DESARROLLO DE APRENDIZAJE      PDA",
+                "TEMAS A ATENDER PARA EL LOGRO DE LOS PROCESOS DE DESARROLLO DE APRENDIZAJE",
+                "No. DE SESIONES PARA EL LOGRO DEL PDA.",
+                "Verbo Rector",
+                "Complejidad",
+                "Rango Sugerido"
+            ];
+            headers.forEach((h, colIdx) => {
+                const cell = ws.getCell(5, colIdx + 1);
+                cell.value = h;
+                cell.font = { bold: true, size: 8 };
+                cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                cell.border = {
+                    top: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    left: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+
+            // Escribir lista de PDAs en columnas A-H (1 a 8)
+            pdas.forEach((pda, i) => {
+                const rIdx = 6 + i;
+                const row = ws.getRow(rIdx);
+                
+                row.getCell(1).value = pda.contenido || '';
+                row.getCell(2).value = pda.pda_number;
+                row.getCell(3).value = pda.topic || '';
+                row.getCell(4).value = pda.temas || '';
+                row.getCell(5).value = pda.sessions_count;
+                row.getCell(6).value = pda.verbo_rector || '';
+                row.getCell(7).value = pda.complejidad || 'Media';
+                row.getCell(8).value = pda.rango_sugerido || '';
+
+                for (let colIdx = 1; colIdx <= 8; colIdx++) {
+                    const cell = row.getCell(colIdx);
+                    cell.alignment = {
+                        vertical: 'middle',
+                        horizontal: (colIdx === 2 || colIdx === 5 || colIdx === 7) ? 'center' : 'left',
+                        wrapText: true
+                    };
+                    cell.border = {
+                        top: { style: 'thin' },
+                        bottom: { style: 'thin' },
+                        left: { style: 'thin' },
+                        right: { style: 'thin' }
+                    };
+                    cell.font = { size: 9 };
+                }
+            });
+
+            // Eliminar merges existentes desde la fila 6 en adelante en columnas de calendario (col >= 9)
             const mergesToRemove = [];
             for (const merge in ws._merges) {
                 const [start, end] = merge.split(':');
                 const startRow = parseInt(start.replace(/\D/g, ''));
-                if (startRow >= 6) {
+                const startColStr = start.replace(/\d/g, '');
+                // Convertir letra de columna a índice
+                let colIdx = 0;
+                for (let charIdx = 0; charIdx < startColStr.length; charIdx++) {
+                    colIdx = colIdx * 26 + (startColStr.charCodeAt(charIdx) - 64);
+                }
+                if (startRow >= 6 && colIdx >= 9) {
                     mergesToRemove.push(merge);
                 }
             }

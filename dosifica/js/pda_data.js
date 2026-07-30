@@ -38,15 +38,327 @@ const NEM_PHASE6_LIBRARY = {
     },
     "Matemáticas": {
         1: [
-            "Expresa de diversas maneras números enteros, fraccionarios y decimales positivos y negativos.",
-            "Resuelve problemas de suma y resta con números enteros, fraccionarios y decimales.",
-            "Determina y compara medidas de tendencia central (media, mediana, moda) y dispersión.",
-            "Introduce los conceptos del álgebra y representa situaciones cotidianas con expresiones lineales.",
-            "Resuelve ecuaciones lineales y representa de forma gráfica y tabular variaciones proporcionales.",
-            "Identifica las propiedades de figuras planas y cuerpos geométricos básicos.",
-            "Calcula el perímetro y el área de polígonos regulares y círculos.",
-            "Interpreta información a partir de tablas y gráficas de barras, circulares y poligonales."
-        ],
+          {
+                    "contenido": "Expresión de fracciones como decimales y de decimales como fracciones.",
+                    "pda_number": 1,
+                    "topic": "Usa diversas estrategias al convertir números fraccionarios a decimales y viceversa.",
+                    "temas": "Concepto de fracción\nConcepto de número decimal\nValor posicional de los números decimales\nFracciones propias, impropias y mixtas\nFracciones equivalentes\nSimplificación de fracciones\nConversión de fracciones a decimales\nConversión de decimales exactos a fracciones\nConversión de decimales periódicos a fracciones\nComparación de fracciones y decimales\nResolución de problemas con fracciones y decimales",
+                    "sessions_count": 5,
+                    "verbo_rector": "Usa",
+                    "complejidad": "Baja",
+                    "rango_sugerido": "8 a 10 sesiones"
+          },
+          {
+                    "contenido": "Extensión de los números a positivos y negativos y su orden.",
+                    "pda_number": 2,
+                    "topic": "Reconoce la necesidad de los números negativos a partir de usar cantidades que tienen al cero como referencia.",
+                    "temas": "El número cero como punto de referencia\nConcepto de números positivos y negativos\nRecta numérica con números enteros\nUbicación de números negativos en la recta numérica\nComparación de números enteros\nSituaciones cotidianas con números negativos\nTemperaturas sobre y bajo cero\nAlturas y profundidades respecto al nivel del mar\nGanancias y pérdidas\nInterpretación de números negativos en contextos reales",
+                    "sessions_count": 5,
+                    "verbo_rector": "Reconoce",
+                    "complejidad": "Baja",
+                    "rango_sugerido": "8 a 10 sesiones"
+          },
+          {
+                    "contenido": "Extensión de los números a positivos y negativos y su orden.",
+                    "pda_number": 3,
+                    "topic": "Compara y ordena números con signo (enteros, fracciones y decimales) en la recta numérica y analiza en qué casos se cumple la propiedad de densidad.",
+                    "temas": "Números con signo\nRecta numérica\nUbicación de números enteros, fracciones y decimales\nComparación de números con signo\nOrden de números con signo\nFracciones con signo\nDecimales con signo\nValor absoluto\nPropiedad de densidad de los números racionales\nIdentificación de números entre dos números dados\nRepresentación de números racionales en la recta numérica",
+                    "sessions_count": 6,
+                    "verbo_rector": "Compara",
+                    "complejidad": "Media",
+                    "rango_sugerido": "10 a 12 sesiones"
+          },
+          {
+                    "contenido": "Extensión del significado de las operaciones y sus relaciones inversas.",
+                    "pda_number": 4,
+                    "topic": "Reconoce el significado de las cuatro operaciones básicas y sus relaciones inversas al resolver problemas que impliquen el uso de números con signo.",
+                    "temas": "Números con signo\nSuma de números con signo\nResta de números con signo\nMultiplicación de números con signo\nDivisión de números con signo\nReglas de los signos\nPropiedades de las operaciones básicas\nOperaciones inversas\nJerarquía de las operaciones\nResolución de problemas con números con signo",
+                    "sessions_count": 5,
+                    "verbo_rector": "Reconoce",
+                    "complejidad": "Baja",
+                    "rango_sugerido": "8 a 10 sesiones"
+          },
+          {
+                    "contenido": "Extensión del significado de las operaciones y sus relaciones inversas.",
+                    "pda_number": 5,
+                    "topic": "Comprueba y argumenta si cada una de estas operaciones cumple las propiedades: conmutativa, asociativa y distributiva",
+                    "temas": "Operaciones básicas\nPropiedad conmutativa\nPropiedad asociativa\nPropiedad distributiva\nIdentificación de propiedades en las operaciones\nOperaciones que cumplen y no cumplen las propiedades\nJustificación de propiedades mediante ejemplos\nResolución de problemas aplicando las propiedades",
+                    "sessions_count": 8,
+                    "verbo_rector": "Argumenta",
+                    "complejidad": "Alta",
+                    "rango_sugerido": "13 a 15 sesiones"
+          },
+          {
+                    "contenido": "Extensión del significado de las operaciones y sus relaciones inversas.",
+                    "pda_number": 6,
+                    "topic": "Identifica y aplica la jerarquía de operaciones y símbolos de agrupación al realizar cálculos.",
+                    "temas": "Operaciones básicas\nJerarquía de operaciones\nSímbolos de agrupación\nOrden de resolución de expresiones\nExpresiones numéricas\nCálculo con operaciones combinadas\nResolución de problemas con jerarquía de operaciones",
+                    "sessions_count": 5,
+                    "verbo_rector": "Identifica",
+                    "complejidad": "Baja",
+                    "rango_sugerido": "8 a 10 sesiones"
+          },
+          {
+                    "contenido": "Regularidades y Patrones.",
+                    "pda_number": 7,
+                    "topic": "Representa algebraicamente una sucesión con progresión aritmética de figuras y números.",
+                    "temas": "Sucesiones numéricas\nPatrones de figuras\nPatrones numéricos\nProgresión aritmética\nTérmino general de una sucesión\nExpresiones algebraicas\nRepresentación algebraica de sucesiones\nResolución de problemas con sucesiones aritméticas",
+                    "sessions_count": 6,
+                    "verbo_rector": "Representa",
+                    "complejidad": "Media",
+                    "rango_sugerido": "10 a 12 sesiones"
+          },
+          {
+                    "contenido": "Introducción al álgebra",
+                    "pda_number": 8,
+                    "topic": "Interpreta y plantea diversas situaciones del lenguaje común al lenguaje algebraico y viceversa.",
+                    "temas": "Lenguaje común y lenguaje algebraico\nVariables y literales\nConstantes y coeficientes\nExpresiones algebraicas\nTraducción del lenguaje común al algebraico\nTraducción del lenguaje algebraico al común\nPlanteamiento de expresiones algebraicas\nResolución de problemas con expresiones algebraicas",
+                    "sessions_count": 6,
+                    "verbo_rector": "Interpreta",
+                    "complejidad": "Media",
+                    "rango_sugerido": "10 a 12 sesiones"
+          },
+          {
+                    "contenido": "Introducción al álgebra",
+                    "pda_number": 9,
+                    "topic": "Representa algebraica mente perímetros de figuras",
+                    "temas": "Concepto de perímetro\nPerímetro de figuras geométricas\nVariables y literales\nExpresiones algebraicas\nRepresentación algebraica del perímetro\nSimplificación de expresiones algebraicas\nPerímetros con medidas desconocidas\nResolución de problemas de perímetros algebraicos",
+                    "sessions_count": 6,
+                    "verbo_rector": "Representa",
+                    "complejidad": "Media",
+                    "rango_sugerido": "10 a 12 sesiones"
+          },
+          {
+                    "contenido": "Ecuaciones lineales y cuadráticas.",
+                    "pda_number": 10,
+                    "topic": "Resuelve ecuaciones de la forma Ax=B, Ax+B=C, Ax+B=Cx+D con el uso de las propiedades de la igualdad.",
+                    "temas": "Concepto de ecuación\nElementos de una ecuación\nPropiedades de la igualdad\nDespeje de la incógnita\nEcuaciones de la forma Ax=B\nEcuaciones de la forma Ax+B=C\nEcuaciones de la forma Ax+B=Cx+D\nComprobación de soluciones\nResolución de problemas con ecuaciones lineales",
+                    "sessions_count": 6,
+                    "verbo_rector": "Resuelve",
+                    "complejidad": "Media",
+                    "rango_sugerido": "10 a 12 sesiones"
+          },
+          {
+                    "contenido": "Ecuaciones lineales y cuadráticas.",
+                    "pda_number": 11,
+                    "topic": "Modela y resuelve problemas cuyo planteamiento es una ecuación lineal.",
+                    "temas": "Problemas con ecuaciones lineales\nIdentificación de datos e incógnitas\nPlanteamiento de ecuaciones lineales\nResolución de ecuaciones lineales\nComprobación de resultados\nInterpretación de la solución\nModelación de situaciones cotidianas con ecuaciones lineales",
+                    "sessions_count": 8,
+                    "verbo_rector": "Modela",
+                    "complejidad": "Alta",
+                    "rango_sugerido": "13 a 15 sesiones"
+          },
+          {
+                    "contenido": "Ecuaciones lineales y cuadráticas.",
+                    "pda_number": 12,
+                    "topic": "Resuelve problemas de porcentajes en diversas situaciones.",
+                    "temas": "Concepto de porcentaje\nPorcentaje como fracción y decimal\nCálculo de porcentajes\nAumento porcentual\nDescuento porcentual\nPorcentaje de una cantidad\nCálculo del total a partir de un porcentaje\nResolución de problemas con porcentajes",
+                    "sessions_count": 6,
+                    "verbo_rector": "Resuelve",
+                    "complejidad": "Media",
+                    "rango_sugerido": "10 a 12 sesiones"
+          },
+          {
+                    "contenido": "Funciones",
+                    "pda_number": 13,
+                    "topic": "Relaciona e interpreta relaciones proporcional y no proporcional a partir de su representación tabular, gráfica y con diagramas.",
+                    "temas": "Proporcionalidad\nRelaciones proporcionales\nRelaciones no proporcionales\nTablas de valores\nGráficas de relaciones\nDiagramas de relaciones\nConstante de proporcionalidad\nComparación de relaciones proporcionales y no proporcionales\nInterpretación de tablas, gráficas y diagramas\nResolución de problemas de proporcionalidad",
+                    "sessions_count": 6,
+                    "verbo_rector": "Relaciona",
+                    "complejidad": "Media",
+                    "rango_sugerido": "10 a 12 sesiones"
+          },
+          {
+                    "contenido": "Funciones",
+                    "pda_number": 14,
+                    "topic": "Modela y resuelve diversas situaciones a través de ecuaciones proporcionales con constante positiva y negativa.",
+                    "temas": "Proporcionalidad directa\nConstante de proporcionalidad\nConstante positiva y negativa\nEcuaciones de proporcionalidad\nTablas y gráficas de relaciones proporcionales\nModelación de situaciones proporcionales\nResolución de problemas con ecuaciones proporcionales\nInterpretación de la constante de proporcionalidad",
+                    "sessions_count": 8,
+                    "verbo_rector": "Modela",
+                    "complejidad": "Alta",
+                    "rango_sugerido": "13 a 15 sesiones"
+          },
+          {
+                    "contenido": "Rectas y ángulos",
+                    "pda_number": 15,
+                    "topic": "Explora las figuras básicas como rectas y ángulos y su notación.",
+                    "temas": "Punto, recta, semirrecta y segmento\nNotación de figuras básicas\nConcepto de ángulo\nElementos de un ángulo\nNotación de ángulos\nClasificación de ángulos\nRectas paralelas y perpendiculares\nRelación entre rectas y ángulos",
+                    "sessions_count": 5,
+                    "verbo_rector": "Explora",
+                    "complejidad": "Baja",
+                    "rango_sugerido": "8 a 10 sesiones"
+          },
+          {
+                    "contenido": "Rectas y ángulos",
+                    "pda_number": 16,
+                    "topic": "Encuentra y calcula los ángulos que se forman al intersecar dos segmentos.",
+                    "temas": "Intersección de rectas y segmentos\nÁngulos opuestos por el vértice\nÁngulos adyacentes\nÁngulos suplementarios\nÁngulos complementarios\nCálculo de ángulos\nRelaciones entre ángulos\nResolución de problemas con ángulos",
+                    "sessions_count": 6,
+                    "verbo_rector": "Encuentra",
+                    "complejidad": "Media",
+                    "rango_sugerido": "10 a 12 sesiones"
+          },
+          {
+                    "contenido": "Construcción y propiedades de las figuras planas y cuerpos.",
+                    "pda_number": 17,
+                    "topic": "Utiliza la regla y el compás para trazar: punto medio, mediatriz de un segmento, segmentos y ángulos congruentes, bisectriz de un ángulo, rectas perpendiculares y rectas paralelas.",
+                    "temas": "Uso de la regla y el compás\nPunto medio de un segmento\nMediatriz de un segmento\nSegmentos congruentes\nÁngulos congruentes\nBisectriz de un ángulo\nRectas perpendiculares\nRectas paralelas\nConstrucciones geométricas básicas\nTrazos geométricos con regla y compás",
+                    "sessions_count": 6,
+                    "verbo_rector": "Utiliza",
+                    "complejidad": "Media",
+                    "rango_sugerido": "10 a 12 sesiones"
+          },
+          {
+                    "contenido": "Construcción y propiedades de las figuras planas y cuerpos.",
+                    "pda_number": 18,
+                    "topic": "ldentifica y traza las rectas notables en triángulos y cuadriláteros.",
+                    "temas": "Triángulos y cuadriláteros\nAlturas de un triángulo\nMedianas de un triángulo\nMediatrices de un triángulo\nBisectrices de un triángulo\nRectas notables en cuadriláteros\nTrazo de rectas notables\nConstrucciones geométricas con regla y compás",
+                    "sessions_count": 5,
+                    "verbo_rector": "Identifica",
+                    "complejidad": "Baja",
+                    "rango_sugerido": "8 a 10 sesiones"
+          },
+          {
+                    "contenido": "Construcción y propiedades de las figuras planas y cuerpos.",
+                    "pda_number": 19,
+                    "topic": "Construye y clasifica triángulos Y cuadriláteros a partir del análisis de distinta información.",
+                    "temas": "Elementos de los triángulos\nClasificación de triángulos\nElementos de los cuadriláteros\nClasificación de cuadriláteros\nPropiedades de triángulos y cuadriláteros\nConstrucción de triángulos\nConstrucción de cuadriláteros\nAnálisis de figuras geométricas",
+                    "sessions_count": 6,
+                    "verbo_rector": "Construye",
+                    "complejidad": "Media",
+                    "rango_sugerido": "10 a 12 sesiones"
+          },
+          {
+                    "contenido": "Circunferencia, círculo y esfera.",
+                    "pda_number": 20,
+                    "topic": "Identifica y traza las rectas notables en la circunferencia y las relaciones entre ellas.",
+                    "temas": "Elementos de la circunferencia\nRadio y diámetro\nCuerda\nSecante\nTangente\nArco\nRelaciones entre radio, diámetro, cuerda, secante y tangente\nTrazo de elementos notables de la circunferencia\nConstrucciones geométricas con regla y compás",
+                    "sessions_count": 5,
+                    "verbo_rector": "Identifica",
+                    "complejidad": "Baja",
+                    "rango_sugerido": "8 a 10 sesiones"
+          },
+          {
+                    "contenido": "Circunferencia, círculo y esfera.",
+                    "pda_number": 21,
+                    "topic": "Investiga figuras relacionadas con círculos y propiedades de los círculos.",
+                    "temas": "Circunferencia y círculo\nElementos del círculo\nFiguras relacionadas con el círculo\nPosiciones de rectas y circunferencias\nÁngulos en la circunferencia\nPropiedades del círculo\nPropiedades de la circunferencia\nAplicaciones del círculo en situaciones cotidianas",
+                    "sessions_count": 7,
+                    "verbo_rector": "Investiga",
+                    "complejidad": "Alta",
+                    "rango_sugerido": "13 a 15 sesiones"
+          },
+          {
+                    "contenido": "Circunferencia, círculo y esfera.",
+                    "pda_number": 22,
+                    "topic": "Construye circunferencias a partir de distinta información. Verifica los criterios de existencia y unicidad de estas figuras.",
+                    "temas": "Circunferencia y círculo\nElementos de la circunferencia\nConstrucción de circunferencias\nUso de la regla y el compás\nCircunferencia por centro y radio\nCircunferencia por tres puntos\nCriterios de existencia de una circunferencia\nCriterio de unicidad de una circunferencia\nVerificación de construcciones geométricas",
+                    "sessions_count": 6,
+                    "verbo_rector": "Construye",
+                    "complejidad": "Media",
+                    "rango_sugerido": "10 a 12 sesiones"
+          },
+          {
+                    "contenido": "Medición y cálculo en diferentes contextos.",
+                    "pda_number": 23,
+                    "topic": "Introduce la idea de distancia entre dos puntos como la longitud del segmento que los une.",
+                    "temas": "Punto y segmento\nDistancia entre dos puntos\nLongitud de un segmento\nMedición de segmentos\nComparación de distancias\nUnidades de longitud\nUso de la regla para medir segmentos\nResolución de problemas con distancias",
+                    "sessions_count": 5,
+                    "verbo_rector": "Introduce",
+                    "complejidad": "Baja",
+                    "rango_sugerido": "8 a 10 sesiones"
+          },
+          {
+                    "contenido": "Medición y cálculo en diferentes contextos.",
+                    "pda_number": 24,
+                    "topic": "Encuentra la distancia de un punto a una recta y la distancia entre dos rectas paralelas.",
+                    "temas": "Distancia de un punto a una recta\nPerpendicular a una recta\nDistancia entre rectas paralelas\nRectas paralelas\nSegmento perpendicular\nMedición de distancias\nUso de la regla y la escuadra\nResolución de problemas con distancias geométricas",
+                    "sessions_count": 6,
+                    "verbo_rector": "Encuentra",
+                    "complejidad": "Media",
+                    "rango_sugerido": "10 a 12 sesiones"
+          },
+          {
+                    "contenido": "Medición y cálculo en diferentes contextos.",
+                    "pda_number": 25,
+                    "topic": "Explora la desigualdad del triángulo.",
+                    "temas": "Elementos del triángulo\nLongitud de los lados de un triángulo\nDesigualdad del triángulo\nCondiciones de existencia de un triángulo\nComparación de longitudes\nConstrucción de triángulos\nVerificación de la desigualdad del triángulo\nResolución de problemas con la desigualdad del triángulo",
+                    "sessions_count": 5,
+                    "verbo_rector": "Explora",
+                    "complejidad": "Baja",
+                    "rango_sugerido": "8 a 10 sesiones"
+          },
+          {
+                    "contenido": "Medición y cálculo en diferentes contextos.",
+                    "pda_number": 26,
+                    "topic": "Obtiene y aplica fórmulas o usa otras estrategias para calcular el perímetro y el área de polígonos regulares e irregulares y del círculo.",
+                    "temas": "Perímetro de polígonos\nÁrea de polígonos\nPolígonos regulares\nPolígonos irregulares\nPerímetro de la circunferencia\nÁrea del círculo\nFórmulas de perímetro y área\nDescomposición de figuras compuestas\nResolución de problemas de perímetro y área",
+                    "sessions_count": 6,
+                    "verbo_rector": "Obtiene",
+                    "complejidad": "Media",
+                    "rango_sugerido": "10 a 12 sesiones"
+          },
+          {
+                    "contenido": "Obtención y representación de información.",
+                    "pda_number": 27,
+                    "topic": "Usa tablas, gráficas de barras y circulares para el análisis de información.",
+                    "temas": "Recolección de datos\nOrganización de datos en tablas\nFrecuencia de datos\nTablas de frecuencia\nGráfica de barras\nGráfica circular\nInterpretación de tablas\nInterpretación de gráficas\nComparación de datos\nAnálisis de información estadística",
+                    "sessions_count": 6,
+                    "verbo_rector": "Usa",
+                    "complejidad": "Media",
+                    "rango_sugerido": "10 a 12 sesiones"
+          },
+          {
+                    "contenido": "Interpretación de la información a través de medidas de tendencia central y de dispersión.",
+                    "pda_number": 28,
+                    "topic": "Determina e interpreta la frecuencia absoluta, la frecuencia relativa, la media, la mediana y la moda en un conjunto de datos.",
+                    "temas": "Recolección y organización de datos\nTablas de frecuencia\nFrecuencia absoluta\nFrecuencia relativa\nMedia aritmética\nMediana\nModa\nInterpretación de medidas de tendencia central\nAnálisis e interpretación de datos",
+                    "sessions_count": 6,
+                    "verbo_rector": "Determina",
+                    "complejidad": "Media",
+                    "rango_sugerido": "10 a 12 sesiones"
+          },
+          {
+                    "contenido": "Interpretación de la información a través de medidas de tendencia central y de dispersión.",
+                    "pda_number": 29,
+                    "topic": "Usa e interpreta las medidas de tendencia central (moda, media aritmética y mediana) y el rango de un conjunto de datos, y justifica con base en ellas sus decisiones.",
+                    "temas": "Organización de datos\nMedidas de tendencia central\nMedia aritmética\nMediana\nModa\nRango\nInterpretación de medidas de tendencia central\nComparación de conjuntos de datos\nToma de decisiones con datos\nJustificación de conclusiones con datos estadísticos",
+                    "sessions_count": 8,
+                    "verbo_rector": "Justifica",
+                    "complejidad": "Alta",
+                    "rango_sugerido": "13 a 15 sesiones"
+          },
+          {
+                    "contenido": "Azar y probabilidad",
+                    "pda_number": 30,
+                    "topic": "Compara cualitativamente dos o más eventos a partir de sus resultados posibles, usa relaciones como: \"es más probable que...\", \"es menos probable que...\".",
+                    "temas": "Experimentos aleatorios\nEspacio muestral\nEventos o sucesos\nResultados posibles\nComparación de probabilidades\nEventos más probables y menos probables\nEventos equiprobables\nProbabilidad cualitativa\nInterpretación de situaciones de azar\nResolución de problemas de probabilidad cualitativa",
+                    "sessions_count": 6,
+                    "verbo_rector": "Compara",
+                    "complejidad": "Media",
+                    "rango_sugerido": "10 a 12 sesiones"
+          },
+          {
+                    "contenido": "Azar y probabilidad",
+                    "pda_number": 31,
+                    "topic": "Identifica eventos en los que interviene el azar, determina el espacio muestra! y experimenta.",
+                    "temas": "Experimentos aleatorios\nAzar y eventos aleatorios\nEspacio muestral\nResultados posibles\nEventos o sucesos\nRegistro de resultados\nFrecuencia de un evento\nExperimentación con fenómenos aleatorios\nInterpretación de resultados experimentales",
+                    "sessions_count": 5,
+                    "verbo_rector": "Identifica",
+                    "complejidad": "Baja",
+                    "rango_sugerido": "8 a 10 sesiones"
+          },
+          {
+                    "contenido": "Azar y probabilidad",
+                    "pda_number": 32,
+                    "topic": "Identifica diversos procedimientos de conteo y resuelve problemas.",
+                    "temas": "Principio de conteo\nDiagramas de árbol\nTablas de conteo\nListado sistemático\nRegla del producto\nRegla de la suma\nEstrategias de conteo\nResolución de problemas de conteo",
+                    "sessions_count": 5,
+                    "verbo_rector": "Identifica",
+                    "complejidad": "Baja",
+                    "rango_sugerido": "8 a 10 sesiones"
+          }
+],
         2: [
             "Resuelve problemas de multiplicación y división con números enteros, fraccionarios y decimales.",
             "Resuelve problemas de proporcionalidad directa e inversa utilizando múltiples representaciones.",
