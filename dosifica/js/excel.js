@@ -220,17 +220,34 @@ const ExcelExport = (() => {
         }
     }
 
+    function parseDateDMY(dmyStr) {
+        if (!dmyStr) return null;
+        const parts = dmyStr.split('-');
+        if (parts.length === 3) {
+            return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+        }
+        return null;
+    }
+
+    function formatDateDMY(date) {
+        const d = new Date(date);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}-${month}-${year}`;
+    }
+
     // Funciones auxiliares para calcular días hábiles
     function calculateSchoolDays(startDate, totalDays, holidays) {
         const days = [];
-        let current = new Date(startDate + 'T00:00:00');
+        let current = parseDateDMY(startDate);
         let count = 0;
         let limit = 0;
 
         while (count < totalDays && limit < 1000) {
             limit++;
             const w = current.getDay(); // 0 = Domingo, 6 = Sábado
-            const dateStr = current.toISOString().split('T')[0];
+            const dateStr = formatDateDMY(current);
 
             if (w !== 0 && w !== 6 && !holidays[dateStr]) {
                 days.push(dateStr);
@@ -247,7 +264,7 @@ const ExcelExport = (() => {
         const p2Limit = p1Days + p2Days;
 
         schoolDays.forEach((dateStr, idx) => {
-            const date = new Date(dateStr + 'T00:00:00');
+            const date = parseDateDMY(dateStr);
             const dayOfWeek = date.getDay(); // 0=Dom, 1=Lun...
             
             const hours = schedule[dayOfWeek] || 0;
@@ -266,8 +283,8 @@ const ExcelExport = (() => {
 
     function getCycleMonths(startDate, endDate) {
         const months = [];
-        let current = new Date(startDate + 'T00:00:00');
-        let last = new Date(endDate ? (endDate + 'T00:00:00') : (startDate + 'T00:00:00'));
+        let current = parseDateDMY(startDate);
+        let last = parseDateDMY(endDate ? endDate : startDate);
         if (!endDate) {
             last.setMonth(last.getMonth() + 11); // Fallback: 11 meses adicionales
         }
@@ -293,7 +310,7 @@ const ExcelExport = (() => {
 
         while (date.getMonth() === month) {
             const w = date.getDay();
-            const dateStr = date.toISOString().split('T')[0];
+            const dateStr = formatDateDMY(date);
 
             if (w !== 0 && w !== 6) {
                 workdays.push({

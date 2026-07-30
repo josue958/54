@@ -435,6 +435,7 @@ async function savePdaPlannerChanges(planeacionId, totalSessions) {
    ========================================================= */
 function initPlanCRUD() {
     const editForm = document.getElementById('edit-plan-form');
+    const newPlanBtn = document.getElementById('btn-new-planification');
     
     // Configurar validación de horario en el modal de edición
     const weeklyInput = document.getElementById('edit-plan-weekly-hours');
@@ -464,10 +465,43 @@ function initPlanCRUD() {
         weeklyInput.addEventListener('input', validateHours);
     }
 
+    // Configurar botón "Nueva Planeación"
+    if (newPlanBtn) {
+        newPlanBtn.addEventListener('click', () => {
+            document.getElementById('edit-plan-id').value = '';
+            document.getElementById('plan-modal-title').innerText = 'Crear Nueva Planeación';
+            document.getElementById('edit-plan-discipline').value = '';
+            document.getElementById('edit-plan-grade').value = '1';
+            document.getElementById('edit-plan-weekly-hours').value = '4';
+
+            // Rellenar ciclos escolares
+            const select = document.getElementById('edit-plan-cycle');
+            select.innerHTML = '';
+            const list = dbQuery("SELECT * FROM school_cycles ORDER BY start_date DESC");
+            if (!list.length) {
+                showToast('Primero debes crear al menos un ciclo escolar en la pestaña Ciclos.', 'error');
+                return;
+            }
+            list.forEach(c => {
+                select.appendChild(Object.assign(document.createElement('option'), { value: c.id, text: c.name }));
+            });
+
+            // Horario inicial por defecto (4hs)
+            document.getElementById('edit-plan-day-1').value = 1;
+            document.getElementById('edit-plan-day-2').value = 1;
+            document.getElementById('edit-plan-day-3').value = 1;
+            document.getElementById('edit-plan-day-4').value = 1;
+            document.getElementById('edit-plan-day-5').value = 0;
+
+            validateHours();
+            document.getElementById('edit-plan-modal').style.display = 'flex';
+        });
+    }
+
     editForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const planId = parseInt(document.getElementById('edit-plan-id').value);
+        const planIdVal = document.getElementById('edit-plan-id').value;
         const cycleId = parseInt(document.getElementById('edit-plan-cycle').value);
         const disciplina = document.getElementById('edit-plan-discipline').value.trim();
         const grado = parseInt(document.getElementById('edit-plan-grade').value);
@@ -479,16 +513,71 @@ function initPlanCRUD() {
         }
 
         try {
-            await dbRun(
-                `UPDATE planeaciones SET cycle_id = ?, disciplina = ?, grado = ?, weekly_hours = ?, schedule = ? WHERE id = ?`,
-                [cycleId, disciplina, grado, weeklyHours, JSON.stringify(schedule), planId]
-            );
+            if (planIdVal) {
+                // Modo EDICION
+                const planId = parseInt(planIdVal);
+                await dbRun(
+                    `UPDATE planeaciones SET cycle_id = ?, disciplina = ?, grado = ?, weekly_hours = ?, schedule = ? WHERE id = ?`,
+                    [cycleId, disciplina, grado, weeklyHours, JSON.stringify(schedule), planId]
+                );
 
-            showToast('Parámetros de la planeación actualizados.', 'success');
+                showToast('Parámetros de la planeación actualizados.', 'success');
+            } else {
+                // Modo CREACION (CRUD completo)
+                const libPdas = NEM_PHASE6_LIBRARY[disciplina]?.[grado] || [];
+                const totalPdas = libPdas.length || 1;
+
+                // 1. Insertar planeación
+                const newId = await dbRun(
+                    `INSERT INTO planeaciones(cycle_id, disciplina, grado, weekly_hours, schedule, total_pdas) VALUES(?,?,?,?,?,?)`,
+                    [cycleId, disciplina, grado, weeklyHours, JSON.stringify(schedule), totalPdas]
+                );
+
+                // 2. Calcular sesiones del ciclo
+                const cycles = dbQuery("SELECT * FROM school_cycles WHERE id = ?", [cycleId]);
+                const cycle = cycles[0];
+                const holidays = JSON.parse(cycle.holidays || '{}');
+                const schoolDays = calculateSchoolDays(cycle.start_date, cycle.total_days, holidays);
+                const sessions = mapSessions(schoolDays, schedule, cycle.period1_days, cycle.period2_days);
+                const totalSessions = sessions.length;
+
+                const baseSessions = Math.floor(totalSessions / totalPdas);
+                const remainder = totalSessions % totalPdas;
+
+                // 3. Insertar PDAs de la asignatura
+                if (libPdas.length > 0) {
+                    for (let i = 0; i < libPdas.length; i++) {
+                        const text = libPdas[i];
+                        const pdaNum = i + 1;
+                        const verb = getRectorVerb(text);
+                        const sCount = baseSessions + (pdaNum <= remainder ? 1 : 0);
+
+                        await dbRun(
+                            `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count) VALUES(?,?,?,?,?)`,
+                            [newId, pdaNum, text, verb, sCount]
+                        );
+                    }
+                } else {
+                    await dbRun(
+                        `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count) VALUES(?,?,?,?,?)`,
+                        [newId, 1, 'Proceso de Desarrollo de Aprendizaje (PDA) 1', 'Desarrolla', totalSessions]
+                    );
+                }
+
+                showToast('Planeación creada correctamente.', 'success');
+
+                // Abrir el planificador automáticamente
+                setTimeout(() => {
+                    const tabBtn = document.querySelector('.nav-tab-btn[data-target="tab-dosificar"]');
+                    tabBtn.click();
+                    loadPlanification(newId);
+                }, 200);
+            }
+
             closeEditPlanModal();
             renderPlaneacionesList();
         } catch (err) {
-            showToast('Error al actualizar: ' + err.message, 'error');
+            showToast('Error al guardar planeación: ' + err.message, 'error');
         }
     });
 }
@@ -618,6 +707,8 @@ function initCycleForm() {
     const p1 = document.getElementById('cycle-p1-days');
     const p2 = document.getElementById('cycle-p2-days');
     const p3 = document.getElementById('cycle-p3-days');
+    const startInput = document.getElementById('cycle-start-date');
+    const endInput = document.getElementById('cycle-end-date');
 
     function validateSum() {
         const sum = (parseInt(p1.value) || 0) + (parseInt(p2.value) || 0) + (parseInt(p3.value) || 0);
@@ -634,15 +725,44 @@ function initCycleForm() {
         }
     }
 
+    function updateCalculatedDays() {
+        const startVal = startInput.value;
+        const endVal = endInput.value;
+        if (!startVal || !endVal) return;
+
+        // Obtener festivos del ciclo activo (si existe)
+        let holidays = {};
+        const id = document.getElementById('cycle-id').value;
+        if (id) {
+            const cycles = dbQuery("SELECT holidays FROM school_cycles WHERE id = ?", [id]);
+            if (cycles.length) {
+                holidays = JSON.parse(cycles[0].holidays || '{}');
+            }
+        }
+
+        const totalDays = calculateDaysInRange(toggleDateFormat(startVal), toggleDateFormat(endVal), holidays);
+        totalInput.value = totalDays;
+        
+        // Auto-distribuir días en 3 periodos lo más igualitariamente posible
+        const base = Math.floor(totalDays / 3);
+        p1.value = base;
+        p2.value = base;
+        p3.value = totalDays - (base * 2);
+
+        validateSum();
+    }
+
     [p1, p2, p3, totalInput].forEach(el => el.addEventListener('input', validateSum));
+    startInput.addEventListener('change', updateCalculatedDays);
+    endInput.addEventListener('change', updateCalculatedDays);
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const id = document.getElementById('cycle-id').value;
         const name = document.getElementById('cycle-name').value.trim();
-        const start = document.getElementById('cycle-start-date').value;
-        const end = document.getElementById('cycle-end-date').value;
+        const start = toggleDateFormat(startInput.value);
+        const end = toggleDateFormat(endInput.value);
         const total = parseInt(totalInput.value);
         const p1Val = parseInt(p1.value);
         const p2Val = parseInt(p2.value);
@@ -694,27 +814,67 @@ function initCycleForm() {
         activeCycleIdForHolidays = null;
     });
 
-    // Lógica para añadir festivo
-    document.getElementById('holiday-add-form').addEventListener('submit', async (e) => {
+    // Lógica para gestionar festivos (CRUD + Rangos)
+    const holidayForm = document.getElementById('holiday-add-form');
+    const holidaySubmitBtn = document.getElementById('btn-holiday-submit');
+    const holidayCancelBtn = document.getElementById('btn-holiday-cancel');
+    const holidayOrigInput = document.getElementById('holiday-orig-date');
+    const holidayTitle = document.getElementById('holiday-form-title');
+
+    function resetHolidayForm() {
+        holidayForm.reset();
+        holidayOrigInput.value = '';
+        holidayTitle.innerText = 'Agregar Festivo';
+        holidaySubmitBtn.innerText = '➕ Guardar Festivo';
+        holidayCancelBtn.style.display = 'none';
+        document.getElementById('holiday-date-end').disabled = false;
+    }
+
+    if (holidayCancelBtn) {
+        holidayCancelBtn.addEventListener('click', resetHolidayForm);
+    }
+
+    holidayForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!activeCycleIdForHolidays) return;
 
-        const date = document.getElementById('holiday-date').value;
+        const dateStart = document.getElementById('holiday-date').value;
+        const dateEnd = document.getElementById('holiday-date-end').value;
         const label = document.getElementById('holiday-label').value.trim();
+        const origDate = holidayOrigInput.value;
 
         try {
             const cycles = dbQuery("SELECT holidays FROM school_cycles WHERE id = ?", [activeCycleIdForHolidays]);
             if (cycles.length) {
                 const holidays = JSON.parse(cycles[0].holidays || '{}');
-                holidays[date] = label;
+
+                // Si estábamos editando una fecha individual, borrar la fecha original anterior
+                if (origDate) {
+                    delete holidays[origDate];
+                }
+
+                // Guardar como rango o como fecha individual
+                if (dateEnd && dateEnd > dateStart) {
+                    let curr = new Date(dateStart + 'T00:00:00');
+                    const last = new Date(dateEnd + 'T00:00:00');
+                    while (curr <= last) {
+                        const dateStr = curr.toISOString().split('T')[0];
+                        holidays[dateStr] = label;
+                        curr.setDate(curr.getDate() + 1);
+                    }
+                } else {
+                    holidays[dateStart] = label;
+                }
 
                 await dbRun("UPDATE school_cycles SET holidays = ? WHERE id = ?", [JSON.stringify(holidays), activeCycleIdForHolidays]);
-                showToast('Día festivo añadido.', 'success');
-                document.getElementById('holiday-add-form').reset();
+                await recalculateAndSaveCycleDays(activeCycleIdForHolidays);
+                showToast(origDate ? 'Día festivo actualizado.' : 'Día festivo añadido.', 'success');
+                
+                resetHolidayForm();
                 renderHolidaysList(holidays);
             }
         } catch (err) {
-            showToast('Error al añadir festivo: ' + err.message, 'error');
+            showToast('Error al guardar festivo: ' + err.message, 'error');
         }
     });
 
@@ -771,6 +931,7 @@ function initCycleForm() {
                 const mergedHols = Object.assign({}, mxDefaults, currentHols);
 
                 await dbRun("UPDATE school_cycles SET holidays = ? WHERE id = ?", [JSON.stringify(mergedHols), activeCycleIdForHolidays]);
+                await recalculateAndSaveCycleDays(activeCycleIdForHolidays);
                 showToast('Festivos oficiales de México cargados.', 'success');
                 renderHolidaysList(mergedHols);
             }
@@ -778,6 +939,51 @@ function initCycleForm() {
             showToast('Error al cargar festivos: ' + err.message, 'error');
         }
     });
+
+    // Exportar festivos
+    document.getElementById('btn-export-holidays').addEventListener('click', () => {
+        exportHolidaysToExcel();
+    });
+
+    // Importar festivos
+    const importHolidaysInput = document.getElementById('import-holidays-file-input');
+    document.getElementById('btn-import-holidays').addEventListener('click', () => {
+        importHolidaysInput.click();
+    });
+
+    importHolidaysInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        await importHolidaysFromExcel(file);
+        importHolidaysInput.value = ''; // Resetear selección
+    });
+}
+
+async function recalculateAndSaveCycleDays(cycleId) {
+    const cycles = dbQuery("SELECT * FROM school_cycles WHERE id = ?", [cycleId]);
+    if (!cycles.length) return;
+    const cycle = cycles[0];
+    const holidays = JSON.parse(cycle.holidays || '{}');
+
+    const totalDays = calculateDaysInRange(cycle.start_date, cycle.end_date, holidays);
+    const base = Math.floor(totalDays / 3);
+    const p1Val = base;
+    const p2Val = base;
+    const p3Val = totalDays - (base * 2);
+
+    await dbRun(
+        `UPDATE school_cycles SET total_days = ?, period1_days = ?, period2_days = ?, period3_days = ? WHERE id = ?`,
+        [totalDays, p1Val, p2Val, p3Val, cycleId]
+    );
+
+    // Si el formulario actual tiene cargado este ciclo escolar, actualizar inputs
+    const formId = document.getElementById('cycle-id').value;
+    if (formId && parseInt(formId) === cycleId) {
+        document.getElementById('cycle-total-days').value = totalDays;
+        document.getElementById('cycle-p1-days').value = p1Val;
+        document.getElementById('cycle-p2-days').value = p2Val;
+        document.getElementById('cycle-p3-days').value = p3Val;
+    }
 }
 
 function renderCyclesList() {
@@ -790,6 +996,7 @@ function renderCyclesList() {
         tr.innerHTML = `
             <td><strong>${htmlspecialchars(c.name)}</strong></td>
             <td>${c.start_date}</td>
+            <td>${c.end_date}</td>
             <td><span class="badge badge-primary">${c.total_days} días</span></td>
             <td style="text-align: right;">
                 <div style="display:inline-flex; gap:4px;">
@@ -802,8 +1009,8 @@ function renderCyclesList() {
         tr.querySelector('.btn-edit-cycle').addEventListener('click', () => {
             document.getElementById('cycle-id').value = c.id;
             document.getElementById('cycle-name').value = c.name;
-            document.getElementById('cycle-start-date').value = c.start_date;
-            document.getElementById('cycle-end-date').value = c.end_date;
+            document.getElementById('cycle-start-date').value = toggleDateFormat(c.start_date);
+            document.getElementById('cycle-end-date').value = toggleDateFormat(c.end_date);
             document.getElementById('cycle-total-days').value = c.total_days;
             document.getElementById('cycle-p1-days').value = c.period1_days;
             document.getElementById('cycle-p2-days').value = c.period2_days;
@@ -852,35 +1059,78 @@ function renderHolidaysList(holidays) {
 
     const dates = Object.keys(holidays).sort();
     if (!dates.length) {
-        list.innerHTML = `<div class="empty-state" style="padding:10px 0; font-size:12px;">No hay días festivos registrados.</div>`;
+        list.innerHTML = `<div class="empty-state" style="padding:15px 0; font-size:12px; text-align:center; color:var(--text-secondary);">No hay días festivos registrados.</div>`;
         return;
     }
 
     dates.forEach(d => {
-        const chip = document.createElement('div');
-        chip.className = 'holiday-chip';
-        chip.style.marginBottom = '6px';
-        chip.innerHTML = `
-            <span><strong>${d}</strong> — ${htmlspecialchars(holidays[d])}</span>
-            <button class="holiday-remove" data-date="${d}">✕</button>
+        const item = document.createElement('div');
+        item.style.display = 'flex';
+        item.style.justify = 'space-between';
+        item.style.alignItems = 'center';
+        item.style.padding = '8px 12px';
+        item.style.border = '1px solid var(--border-color)';
+        item.style.borderRadius = 'var(--radius-md)';
+        item.style.backgroundColor = 'var(--card-bg)';
+        item.style.fontSize = '0.85rem';
+        item.style.marginBottom = '4px';
+
+        item.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:2px;">
+                <strong style="color: var(--text-color);">${d}</strong>
+                <span style="color: var(--text-secondary); font-size: 0.75rem;">${htmlspecialchars(holidays[d])}</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+                <button class="btn btn-secondary btn-sm btn-edit-holiday" style="padding: 2px 6px; font-size: 0.75rem;">✏️</button>
+                <button class="btn btn-danger btn-sm btn-delete-holiday" style="padding: 2px 6px; font-size: 0.75rem;">🗑️</button>
+            </div>
         `;
 
-        chip.querySelector('.holiday-remove').addEventListener('click', async () => {
-            try {
-                const cycles = dbQuery("SELECT holidays FROM school_cycles WHERE id = ?", [activeCycleIdForHolidays]);
-                if (cycles.length) {
-                    const hols = JSON.parse(cycles[0].holidays || '{}');
-                    delete hols[d];
-                    await dbRun("UPDATE school_cycles SET holidays = ? WHERE id = ?", [JSON.stringify(hols), activeCycleIdForHolidays]);
-                    showToast('Día festivo eliminado.', 'success');
-                    renderHolidaysList(hols);
+        // Botón Editar Festivo
+        item.querySelector('.btn-edit-holiday').addEventListener('click', () => {
+            document.getElementById('holiday-orig-date').value = d;
+            document.getElementById('holiday-date').value = d;
+            document.getElementById('holiday-date-end').value = '';
+            document.getElementById('holiday-date-end').disabled = true; // Deshabilitar rango al editar individual
+            document.getElementById('holiday-label').value = holidays[d];
+            
+            document.getElementById('holiday-form-title').innerText = 'Editar Festivo';
+            document.getElementById('btn-holiday-submit').innerText = '💾 Actualizar Festivo';
+            document.getElementById('btn-holiday-cancel').style.display = 'inline-flex';
+
+            document.getElementById('holiday-add-form').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+
+        // Botón Eliminar Festivo
+        item.querySelector('.btn-delete-holiday').addEventListener('click', async () => {
+            if (confirm(`¿Eliminar el festivo del día ${d}?`)) {
+                try {
+                    const cycles = dbQuery("SELECT holidays FROM school_cycles WHERE id = ?", [activeCycleIdForHolidays]);
+                    if (cycles.length) {
+                        const hols = JSON.parse(cycles[0].holidays || '{}');
+                        delete hols[d];
+                        await dbRun("UPDATE school_cycles SET holidays = ? WHERE id = ?", [JSON.stringify(hols), activeCycleIdForHolidays]);
+                        await recalculateAndSaveCycleDays(activeCycleIdForHolidays);
+                        showToast('Día festivo eliminado.', 'success');
+                        renderHolidaysList(hols);
+
+                        if (document.getElementById('holiday-orig-date').value === d) {
+                            // Resetear formulario si era la que estábamos editando
+                            document.getElementById('holiday-add-form').reset();
+                            document.getElementById('holiday-orig-date').value = '';
+                            document.getElementById('holiday-form-title').innerText = 'Agregar Festivo';
+                            document.getElementById('btn-holiday-submit').innerText = '➕ Guardar Festivo';
+                            document.getElementById('btn-holiday-cancel').style.display = 'none';
+                            document.getElementById('holiday-date-end').disabled = false;
+                        }
+                    }
+                } catch (err) {
+                    showToast('Error al eliminar festivo: ' + err.message, 'error');
                 }
-            } catch (err) {
-                showToast('Error al eliminar festivo: ' + err.message, 'error');
             }
         });
 
-        list.appendChild(chip);
+        list.appendChild(item);
     });
 }
 
@@ -903,6 +1153,20 @@ function initBackupPanel() {
     const triggerBtn = document.getElementById('btn-trigger-import');
     const restoreBtn = document.getElementById('btn-import-db');
     const fileNameSpan = document.getElementById('import-file-name');
+
+    const authForm = document.getElementById('admin-auth-form');
+    const defaultDbFileInput = document.getElementById('default-db-file-input');
+
+    // Funciones globales de apertura y cierre de modal
+    window.openAdminAuthModal = function() {
+        document.getElementById('auth-username').value = '';
+        document.getElementById('auth-password').value = '';
+        document.getElementById('admin-auth-modal').style.display = 'flex';
+    };
+
+    window.closeAdminAuthModal = function() {
+        document.getElementById('admin-auth-modal').style.display = 'none';
+    };
 
     document.getElementById('btn-export-db').addEventListener('click', exportDatabase);
 
@@ -950,26 +1214,57 @@ function initBackupPanel() {
         }
     });
 
-    document.getElementById('btn-reset-db').addEventListener('click', async () => {
-        if (confirm('¿Seguro que deseas restablecer la base de datos por defecto? Se perderán todas tus planeaciones y ciclos personalizados.')) {
-            try {
-                await resetDatabase();
-                showToast('Base de datos restablecida por defecto.', 'success');
-                
-                // Refrescar
-                loadCyclesDropdowns();
-                renderCyclesList();
-                renderPlaneacionesList();
-                
-                // Regresar a la pestaña de dosificar en blanco
-                activePlaneacionId = null;
-                document.getElementById('dosificar-planner').style.display = 'none';
-                document.getElementById('dosificar-setup').style.display = 'block';
-                document.body.classList.add('bg-grid-pattern');
+    // Evento de clic en restablecer base de datos
+    document.getElementById('btn-reset-db').addEventListener('click', () => {
+        openAdminAuthModal();
+    });
 
-            } catch (err) {
-                showToast('Error al restablecer: ' + err.message, 'error');
-            }
+    // Formulario de autenticación de administrador
+    authForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const user = document.getElementById('auth-username').value.trim();
+        const pass = document.getElementById('auth-password').value;
+
+        if (user === 'josue958' && pass === 'Yoshi985') {
+            closeAdminAuthModal();
+            showToast('Autenticación correcta. Selecciona el archivo .sqlite para establecer como predeterminado.', 'success');
+            defaultDbFileInput.click();
+        } else {
+            showToast('Usuario o contraseña incorrectos.', 'error');
+        }
+    });
+
+    // Al seleccionar el archivo de base de datos por defecto
+    defaultDbFileInput.addEventListener('change', async () => {
+        const file = defaultDbFileInput.files[0];
+        if (!file) return;
+
+        try {
+            const buf = await file.arrayBuffer();
+            
+            // 1. Guardar en localStorage como semilla predeterminada
+            saveDefaultSeed(buf);
+            
+            // 2. Cargar en base de datos activa
+            await importDatabase(file);
+
+            showToast('Base de datos predeterminada establecida y cargada con éxito.', 'success');
+
+            // Refrescar vistas
+            loadCyclesDropdowns();
+            renderCyclesList();
+            renderPlaneacionesList();
+
+            // Limpiar selector y regresar a vista de configuración inicial
+            defaultDbFileInput.value = '';
+            activePlaneacionId = null;
+            document.getElementById('dosificar-planner').style.display = 'none';
+            document.getElementById('dosificar-setup').style.display = 'block';
+            document.body.classList.add('bg-grid-pattern');
+
+        } catch (err) {
+            console.error(err);
+            showToast('Error al establecer base de datos por defecto: ' + err.message, 'error');
         }
     });
 }
@@ -987,17 +1282,43 @@ function htmlspecialchars(str) {
         .replace(/'/g, "&#039;");
 }
 
+function toggleDateFormat(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dateStr;
+}
+
+function parseDateDMY(dmyStr) {
+    if (!dmyStr) return null;
+    const parts = dmyStr.split('-');
+    if (parts.length === 3) {
+        return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+    }
+    return null;
+}
+
+function formatDateDMY(date) {
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+}
+
 // Re-declaración de funciones de fechas para el ámbito del app.js
 function calculateSchoolDays(startDate, totalDays, holidays) {
     const days = [];
-    let current = new Date(startDate + 'T00:00:00');
+    let current = parseDateDMY(startDate);
     let count = 0;
     let limit = 0;
 
     while (count < totalDays && limit < 1000) {
         limit++;
         const w = current.getDay();
-        const dateStr = current.toISOString().split('T')[0];
+        const dateStr = formatDateDMY(current);
 
         if (w !== 0 && w !== 6 && !holidays[dateStr]) {
             days.push(dateStr);
@@ -1014,7 +1335,7 @@ function mapSessions(schoolDays, schedule, p1Days, p2Days) {
     const p2Limit = p1Days + p2Days;
 
     schoolDays.forEach((dateStr, idx) => {
-        const date = new Date(dateStr + 'T00:00:00');
+        const date = parseDateDMY(dateStr);
         const dayOfWeek = date.getDay();
         
         const hours = schedule[dayOfWeek] || 0;
@@ -1029,4 +1350,190 @@ function mapSessions(schoolDays, schedule, p1Days, p2Days) {
         }
     });
     return sessions;
+}
+
+function calculateDaysInRange(startDateStr, endDateStr, holidays) {
+    if (!startDateStr || !endDateStr) return 0;
+    
+    let start = parseDateDMY(startDateStr);
+    let end = parseDateDMY(endDateStr);
+    
+    if (start > end) return 0;
+    
+    let count = 0;
+    let current = new Date(start);
+    
+    while (current <= end) {
+        const w = current.getDay(); // 0 = Dom, 6 = Sáb
+        if (w !== 0 && w !== 6) {
+            const dateStr = formatDateDMY(current);
+            if (!holidays[dateStr]) {
+                count++;
+            }
+        }
+        current.setDate(current.getDate() + 1);
+    }
+    return count;
+}
+
+async function exportHolidaysToExcel() {
+    if (!activeCycleIdForHolidays) {
+        showToast('No hay ningún ciclo escolar seleccionado para exportar.', 'error');
+        return;
+    }
+
+    try {
+        const cycles = dbQuery("SELECT * FROM school_cycles WHERE id = ?", [activeCycleIdForHolidays]);
+        if (!cycles.length) return;
+        const cycle = cycles[0];
+        const holidays = JSON.parse(cycle.holidays || '{}');
+
+        // Agrupar fechas consecutivas con el mismo motivo
+        const dates = Object.keys(holidays).sort();
+        const ranges = [];
+
+        if (dates.length > 0) {
+            let currentRange = {
+                inicio: dates[0],
+                fin: dates[0],
+                desc: holidays[dates[0]]
+            };
+
+            for (let i = 1; i < dates.length; i++) {
+                const nextD = dates[i];
+                const diffDays = (parseDateDMY(nextD) - parseDateDMY(currentRange.fin)) / (1000 * 60 * 60 * 24);
+
+                if (diffDays === 1 && holidays[nextD] === currentRange.desc) {
+                    currentRange.fin = nextD;
+                } else {
+                    ranges.push(Object.assign({}, currentRange));
+                    currentRange = {
+                        inicio: nextD,
+                        fin: nextD,
+                        desc: holidays[nextD]
+                    };
+                }
+            }
+            ranges.push(currentRange);
+        }
+
+        // Crear libro Excel
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Festivos');
+
+        sheet.columns = [
+            { header: 'inicio', key: 'inicio', width: 15 },
+            { header: 'fin', key: 'fin', width: 15 },
+            { header: 'Descripcion', key: 'desc', width: 30 }
+        ];
+
+        sheet.getRow(1).font = { bold: true };
+
+        ranges.forEach(r => {
+            sheet.addRow({
+                inicio: r.inicio,
+                fin: r.inicio === r.fin ? '' : r.fin,
+                desc: r.desc
+            });
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const link = Object.assign(document.createElement('a'), {
+            href: url,
+            download: `festivos-${cycle.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.xlsx`
+        });
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        showToast('Festivos exportados con éxito a Excel.', 'success');
+    } catch (e) {
+        console.error(e);
+        showToast('Error al exportar festivos: ' + e.message, 'error');
+    }
+}
+
+async function importHolidaysFromExcel(file) {
+    if (!activeCycleIdForHolidays) {
+        showToast('No hay ningún ciclo escolar seleccionado para importar.', 'error');
+        return;
+    }
+
+    try {
+        const buf = await file.arrayBuffer();
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(buf);
+        const sheet = workbook.worksheets[0];
+        
+        const newHolidays = {};
+        
+        const formatDate = (val) => {
+            if (val instanceof Date) {
+                return formatDateDMY(val);
+            }
+            if (val && typeof val === 'object' && val.result) {
+                val = val.result;
+            }
+            if (typeof val === 'string') {
+                const matchYMD = val.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (matchYMD) return `${matchYMD[3]}-${matchYMD[2]}-${matchYMD[1]}`;
+                const matchDMY = val.match(/^(\d{2})-(\d{2})-(\d{4})/);
+                if (matchDMY) return val;
+            }
+            try {
+                const d = new Date(val);
+                if (!isNaN(d.getTime())) return formatDateDMY(d);
+            } catch(e){}
+            return null;
+        };
+
+        sheet.eachRow((row, rowNumber) => {
+            if (rowNumber === 1) return; // Saltar cabeceras
+            
+            const startVal = row.getCell(1).value;
+            const endVal = row.getCell(2).value;
+            const descVal = row.getCell(3).value;
+
+            if (!startVal || !descVal) return;
+
+            const startStr = formatDate(startVal);
+            const descStr = typeof descVal === 'object' ? (descVal.richText ? descVal.richText.map(t=>t.text).join('') : JSON.stringify(descVal)) : String(descVal).trim();
+
+            if (!startStr || !descStr) return;
+
+            const endStr = endVal ? formatDate(endVal) : null;
+
+            if (endStr && parseDateDMY(endStr) > parseDateDMY(startStr)) {
+                let curr = parseDateDMY(startStr);
+                const last = parseDateDMY(endStr);
+                let limit = 0;
+                while (curr <= last && limit < 150) {
+                    limit++;
+                    const dateStr = formatDateDMY(curr);
+                    newHolidays[dateStr] = descStr;
+                    curr.setDate(curr.getDate() + 1);
+                }
+            } else {
+                newHolidays[startStr] = descStr;
+            }
+        });
+
+        const cycles = dbQuery("SELECT holidays FROM school_cycles WHERE id = ?", [activeCycleIdForHolidays]);
+        if (cycles.length) {
+            const currentHolidays = JSON.parse(cycles[0].holidays || '{}');
+            const merged = Object.assign({}, currentHolidays, newHolidays);
+            
+            await dbRun("UPDATE school_cycles SET holidays = ? WHERE id = ?", [JSON.stringify(merged), activeCycleIdForHolidays]);
+            await recalculateAndSaveCycleDays(activeCycleIdForHolidays);
+            
+            showToast('Festivos importados y combinados correctamente.', 'success');
+            renderHolidaysList(merged);
+        }
+    } catch (e) {
+        console.error(e);
+        showToast('Error al importar festivos: ' + e.message, 'error');
+    }
 }

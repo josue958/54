@@ -20,9 +20,14 @@ async function initDB() {
     if (savedData) {
         _db = new _SQL.Database(savedData);
     } else {
-        _db = new _SQL.Database();
-        _initSchema();
-        _seedData();
+        const defaultSeed = _loadDefaultSeed();
+        if (defaultSeed) {
+            _db = new _SQL.Database(defaultSeed);
+        } else {
+            _db = new _SQL.Database();
+            _initSchema();
+            _seedData();
+        }
         await _saveToIndexedDB();
     }
     _runMigrations();
@@ -74,44 +79,44 @@ function _runMigrations() {
 function _seedData() {
     // Insertar un ciclo escolar por defecto (2026-2027)
     const holidays = {
-        "2026-09-16": "Independencia de México",
-        "2026-11-02": "Día de Muertos",
-        "2026-11-16": "Revolución Mexicana",
-        "2026-12-21": "Vacaciones de Invierno",
-        "2026-12-22": "Vacaciones de Invierno",
-        "2026-12-23": "Vacaciones de Invierno",
-        "2026-12-24": "Vacaciones de Invierno",
-        "2026-12-25": "Navidad",
-        "2026-12-28": "Vacaciones de Invierno",
-        "2026-12-29": "Vacaciones de Invierno",
-        "2026-12-30": "Vacaciones de Invierno",
-        "2026-12-31": "Fin de Año",
-        "2027-01-01": "Año Nuevo",
-        "2027-01-04": "Vacaciones de Invierno",
-        "2027-01-05": "Vacaciones de Invierno",
-        "2027-01-06": "Vacaciones de Invierno",
-        "2027-01-07": "Vacaciones de Invierno",
-        "2027-01-08": "Vacaciones de Invierno",
-        "2027-02-01": "Día de la Constitución",
-        "2027-03-15": "Natalicio de Benito Juárez",
-        "2027-03-22": "Semana Santa",
-        "2027-03-23": "Semana Santa",
-        "2027-03-24": "Semana Santa",
-        "2027-03-25": "Semana Santa",
-        "2027-03-26": "Semana Santa",
-        "2027-03-29": "Semana Santa",
-        "2027-03-30": "Semana Santa",
-        "2027-03-31": "Semana Santa",
-        "2027-04-01": "Semana Santa",
-        "2027-04-02": "Semana Santa",
-        "2027-05-01": "Día del Trabajo",
-        "2027-05-05": "Batalla de Puebla",
-        "2027-05-15": "Día del Maestro"
+        "16-09-2026": "Independencia de México",
+        "02-11-2026": "Día de Muertos",
+        "16-11-2026": "Revolución Mexicana",
+        "21-12-2026": "Vacaciones de Invierno",
+        "22-12-2026": "Vacaciones de Invierno",
+        "23-12-2026": "Vacaciones de Invierno",
+        "24-12-2026": "Vacaciones de Invierno",
+        "25-12-2026": "Navidad",
+        "28-12-2026": "Vacaciones de Invierno",
+        "29-12-2026": "Vacaciones de Invierno",
+        "30-12-2026": "Vacaciones de Invierno",
+        "31-12-2026": "Fin de Año",
+        "01-01-2027": "Año Nuevo",
+        "04-01-2027": "Vacaciones de Invierno",
+        "05-01-2027": "Vacaciones de Invierno",
+        "06-01-2027": "Vacaciones de Invierno",
+        "07-01-2027": "Vacaciones de Invierno",
+        "08-01-2027": "Vacaciones de Invierno",
+        "01-02-2027": "Día de la Constitución",
+        "15-03-2027": "Natalicio de Benito Juárez",
+        "22-03-2027": "Semana Santa",
+        "23-03-2027": "Semana Santa",
+        "24-03-2027": "Semana Santa",
+        "25-03-2027": "Semana Santa",
+        "26-03-2027": "Semana Santa",
+        "29-03-2027": "Semana Santa",
+        "30-03-2027": "Semana Santa",
+        "31-03-2027": "Semana Santa",
+        "01-04-2027": "Semana Santa",
+        "02-04-2027": "Semana Santa",
+        "01-05-2027": "Día del Trabajo",
+        "05-05-2027": "Batalla de Puebla",
+        "15-05-2027": "Día del Maestro"
     };
 
     _db.run(
         `INSERT INTO school_cycles(name, start_date, end_date, total_days, period1_days, period2_days, period3_days, holidays) VALUES(?,?,?,?,?,?,?,?)`,
-        ["Ciclo Escolar 2026-2027", "2026-08-24", "2027-08-13", 190, 63, 63, 64, JSON.stringify(holidays)]
+        ["Ciclo Escolar 2026-2027", "24-08-2026", "13-08-2027", 190, 63, 63, 64, JSON.stringify(holidays)]
     );
     const cid = _lastInsertId();
 
@@ -222,8 +227,36 @@ async function importDatabase(file) {
 }
 
 async function resetDatabase() {
-    _db = new _SQL.Database();
-    _initSchema(); 
-    _seedData();
+    const defaultSeed = _loadDefaultSeed();
+    if (defaultSeed) {
+        _db = new _SQL.Database(defaultSeed);
+    } else {
+        _db = new _SQL.Database();
+        _initSchema(); 
+        _seedData();
+    }
     await _saveToIndexedDB();
+}
+
+function saveDefaultSeed(arrayBuffer) {
+    const bytes = new Uint8Array(arrayBuffer);
+    let binary = '';
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+    localStorage.setItem('nem_default_db_seed', base64);
+}
+
+function _loadDefaultSeed() {
+    const base64 = localStorage.getItem('nem_default_db_seed');
+    if (!base64) return null;
+    const binary = atob(base64);
+    const len = binary.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
 }

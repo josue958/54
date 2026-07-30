@@ -176,7 +176,10 @@
         <!-- ==================== TAB 2: MIS PLANEACIONES ==================== -->
         <section id="tab-planeaciones" class="tab-section" style="display: none;">
             <div class="card-2xl">
-                <h2>Mis Planeaciones</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
+                    <h2>Mis Planeaciones</h2>
+                    <button id="btn-new-planification" class="btn btn-primary">➕ Nueva Planeación</button>
+                </div>
                 <p class="subtitle">Listado de dosificaciones configuradas. Puedes editar sus parámetros, cargar su tabla de PDAs o exportarlas directamente.</p>
                 
                 <div id="planeaciones-list-container">
@@ -216,7 +219,8 @@
                                 <tr>
                                     <th>Ciclo</th>
                                     <th>Inicio</th>
-                                    <th>Días</th>
+                                    <th>Fin</th>
+                                    <th>Días Hábiles</th>
                                     <th style="text-align: right;">Acción</th>
                                 </tr>
                             </thead>
@@ -250,20 +254,20 @@
                             </div>
                             <div class="form-group" style="margin-bottom: 16px;">
                                 <label class="form-label">Días Hábiles del Ciclo</label>
-                                <input type="number" id="cycle-total-days" class="form-control" min="50" max="300" value="190" required>
+                                <input type="number" id="cycle-total-days" class="form-control" min="50" max="300" value="190" required readonly style="background-color: var(--input-bg); opacity: 0.7; cursor: not-allowed;">
                             </div>
                             
                             <div style="display: flex; gap: 8px; margin-bottom: 20px;">
                                 <div class="form-group" style="flex:1;">
-                                    <label class="form-label">Días P1</label>
+                                    <label class="form-label">Días Trimestre 1</label>
                                     <input type="number" id="cycle-p1-days" class="form-control" value="63" required>
                                 </div>
                                 <div class="form-group" style="flex:1;">
-                                    <label class="form-label">Días P2</label>
+                                    <label class="form-label">Días Trimestre 2</label>
                                     <input type="number" id="cycle-p2-days" class="form-control" value="63" required>
                                 </div>
                                 <div class="form-group" style="flex:1;">
-                                    <label class="form-label">Días P3</label>
+                                    <label class="form-label">Días Trimestre 3</label>
                                     <input type="number" id="cycle-p3-days" class="form-control" value="64" required>
                                 </div>
                             </div>
@@ -277,19 +281,45 @@
 
                     <!-- Gestión de Días Inhábiles -->
                     <div id="cycle-holidays-card" class="card-lg" style="display:none;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
                             <h3>Días Festivos / Inhábiles</h3>
-                            <button id="btn-load-mx-holidays" class="btn btn-secondary btn-sm">Cargar Oficiales MX</button>
+                            <div style="display:flex; gap:6px;">
+                                <button id="btn-load-mx-holidays" class="btn btn-secondary btn-sm">Oficiales MX</button>
+                                <button id="btn-export-holidays" class="btn btn-success btn-sm">📥 Exportar</button>
+                                <button id="btn-import-holidays" class="btn btn-primary btn-sm">📤 Importar</button>
+                            </div>
                         </div>
-                        <p class="subtitle" style="font-size:0.8rem; margin-top:-6px;">Añade festivos para excluirlos del calendario de sesiones.</p>
+                        <!-- Selector de archivos oculto para importar festivos -->
+                        <input type="file" id="import-holidays-file-input" accept=".xlsx" style="display: none;">
+                        <p class="subtitle" style="font-size:0.8rem; margin-top:-6px;">Gestiona festivos para excluirlos del calendario de sesiones.</p>
                         
-                        <form id="holiday-add-form" style="display: flex; gap: 8px; margin-bottom: 16px;">
-                            <input type="date" id="holiday-date" class="form-control" required style="padding:6px 12px;">
-                            <input type="text" id="holiday-label" class="form-control" placeholder="Motivo/Nombre..." required style="padding:6px 12px;">
-                            <button type="submit" class="btn btn-primary btn-sm">➕ Añadir</button>
+                        <form id="holiday-add-form" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+                            <input type="hidden" id="holiday-orig-date">
+                            <h4 id="holiday-form-title" style="margin-bottom: 10px; font-size: 0.9rem; font-weight: 700; color: var(--text-color);">Agregar Festivo</h4>
+                            
+                            <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                                <div class="form-group">
+                                    <label class="form-label" style="font-size: 0.75rem;">Fecha Inicio</label>
+                                    <input type="date" id="holiday-date" class="form-control" required style="padding:6px 12px;">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" style="font-size: 0.75rem;">Fecha Fin (Opcional)</label>
+                                    <input type="date" id="holiday-date-end" class="form-control" style="padding:6px 12px;">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label class="form-label" style="font-size: 0.75rem;">Motivo / Descripción</label>
+                                <input type="text" id="holiday-label" class="form-control" placeholder="Ej. Vacaciones de Invierno" required style="padding:6px 12px;">
+                            </div>
+                            
+                            <div style="display: flex; gap: 8px;">
+                                <button type="submit" id="btn-holiday-submit" class="btn btn-primary btn-sm" style="flex:1;">➕ Guardar Festivo</button>
+                                <button type="button" id="btn-holiday-cancel" class="btn btn-secondary btn-sm" style="display:none;">Cancelar</button>
+                            </div>
                         </form>
 
-                        <div class="holidays-grid" id="cycle-holidays-list" style="max-height: 200px; overflow-y: auto;">
+                        <div id="cycle-holidays-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
                             <!-- Inyectado dinámicamente -->
                         </div>
                     </div>
@@ -336,7 +366,7 @@
     <div class="modal-overlay" id="edit-plan-modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Editar Parámetros de Planeación</h3>
+                <h3 id="plan-modal-title">Editar Parámetros de Planeación</h3>
                 <button class="btn-ghost" onclick="closeEditPlanModal()" style="font-size: 20px; border:none; background:none; cursor:pointer;">✕</button>
             </div>
             <form id="edit-plan-form">
@@ -405,6 +435,33 @@
             </form>
         </div>
     </div>
+
+    <!-- Modal para Autenticación de Administrador -->
+    <div class="modal-overlay" id="admin-auth-modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Autenticación de Administrador</h3>
+                <button type="button" class="btn-ghost" onclick="closeAdminAuthModal()" style="font-size: 20px; border:none; background:none; cursor:pointer;">✕</button>
+            </div>
+            <form id="admin-auth-form">
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label class="form-label">Usuario</label>
+                    <input type="text" id="auth-username" class="form-control" placeholder="Usuario administrador" required autocomplete="username">
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label class="form-label">Contraseña</label>
+                    <input type="password" id="auth-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                <div class="modal-footer" style="margin-top: 0; padding-top: 12px; border-top: none;">
+                    <button type="button" class="btn btn-secondary" onclick="closeAdminAuthModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Validar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Selector de archivos oculto para la base de datos por defecto -->
+    <input type="file" id="default-db-file-input" accept=".sqlite" style="display: none;">
 
     <!-- Cargar Scripts de la Aplicación -->
     <script src="js/pda_data.js"></script>
