@@ -71,13 +71,20 @@ function initTabSwitcher() {
                 renderPlaneacionesList();
             } else if (target === 'tab-ciclos') {
                 renderCyclesList();
+            } else if (target === 'tab-cronogramas') {
+                renderCronogramasDashboard();
             }
 
             tabBtns.forEach(b => b.classList.remove('active'));
             sections.forEach(s => s.style.display = 'none');
 
             btn.classList.add('active');
-            document.getElementById(target).style.display = 'block';
+            const targetSection = document.getElementById(target);
+            if (target === 'tab-dosificar' && activePlaneacionId) {
+                targetSection.style.display = 'flex';
+            } else {
+                targetSection.style.display = 'block';
+            }
 
             // Estilos del background
             if (target === 'tab-dosificar' && !activePlaneacionId) {
@@ -90,6 +97,10 @@ function initTabSwitcher() {
 
     // Activar grid pattern al inicio
     document.body.classList.add('bg-grid-pattern');
+
+    window.addEventListener('resize', () => {
+        if (activePlaneacionId) fitCompactColumns();
+    });
 }
 
 /* =========================================================
@@ -219,7 +230,7 @@ async function loadPlanification(planeacionId) {
 
     // Ocultar Setup, Mostrar Planner
     document.getElementById('dosificar-setup').style.display = 'none';
-    document.getElementById('dosificar-planner').style.display = 'block';
+    setPlannerLayoutActive(true);
 
     // Rellenar cabecera y resúmenes
     document.getElementById('planner-subject-title').innerText = `Dosificación: ${planeacion.disciplina} — ${planeacion.grado}º Grado`;
@@ -257,12 +268,66 @@ async function loadPlanification(planeacionId) {
     newExportBtn.addEventListener('click', () => ExcelExport.exportarCronograma(planeacion.cycle_id, planeacionId));
     newBackBtn.addEventListener('click', () => {
         activePlaneacionId = null;
-        document.getElementById('dosificar-planner').style.display = 'none';
+        setPlannerLayoutActive(false);
         document.getElementById('dosificar-setup').style.display = 'block';
         document.body.classList.add('bg-grid-pattern');
         loadCyclesDropdowns();
     });
     newAddPdaBtn.addEventListener('click', () => addNewPdaRow(planeacionId));
+}
+
+function setPlannerLayoutActive(active) {
+    document.getElementById('tab-dosificar').classList.toggle('planner-active', active);
+    document.querySelector('.main-container').classList.toggle('planner-active', active);
+    document.body.classList.toggle('planner-active', active);
+
+    const planner = document.getElementById('dosificar-planner');
+    if (planner) planner.style.display = active ? 'flex' : 'none';
+
+    if (active) requestAnimationFrame(fitCompactColumns);
+}
+
+const _measureCanvas = document.createElement('canvas');
+const _measureCtx = _measureCanvas.getContext('2d');
+
+function measureTextPx(text, referenceEl) {
+    const style = window.getComputedStyle(referenceEl);
+    _measureCtx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    return _measureCtx.measureText(text || '').width;
+}
+
+function fitCompactColumns() {
+    const table = document.getElementById('planner-table');
+    if (!table) return;
+
+    const setColWidth = (colClass, inputSelector, headerText, minPx = 56) => {
+        const col = table.querySelector(`col.${colClass}`);
+        const th = table.querySelector(`th.${colClass}`);
+        if (!col || !th) return;
+
+        let maxW = measureTextPx(headerText, th) + 28;
+
+        if (inputSelector) {
+            table.querySelectorAll(inputSelector).forEach(input => {
+                const text = input.value || input.placeholder || '';
+                maxW = Math.max(maxW, measureTextPx(text, input) + 28);
+            });
+        }
+
+        const width = Math.ceil(Math.max(maxW, minPx));
+        col.style.width = `${width}px`;
+        th.style.width = `${width}px`;
+    };
+
+    setColWidth('col-no', null, 'No.', 44);
+    setColWidth('col-sesiones', '.pda-sessions', 'Sesiones', 76);
+    setColWidth('col-verbo-rector', '.pda-verb', 'Verbo Rector', 96);
+    setColWidth('col-complejidad', '.pda-complejidad', 'Complejidad', 96);
+    setColWidth('col-accion', null, 'Acción', 72);
+}
+
+function bindCompactColumnInput(input) {
+    input.addEventListener('input', () => fitCompactColumns());
 }
 
 function renderPdaRows(pdas, totalSessions) {
@@ -273,33 +338,29 @@ function renderPdaRows(pdas, totalSessions) {
         const tr = document.createElement('tr');
         tr.setAttribute('data-pda-number', pda.pda_number);
         tr.innerHTML = `
-            <td>
-                <textarea class="form-control pda-contenido" placeholder="Contenido" rows="2" style="padding: 6px 8px; resize: vertical; font-size: 0.8rem; height: 50px; font-weight: 500;">${htmlspecialchars(pda.contenido || '')}</textarea>
+            <td class="col-contenido">
+                <textarea class="form-control pda-field pda-contenido" placeholder="Contenido" rows="2">${htmlspecialchars(pda.contenido || '')}</textarea>
             </td>
-            <td style="text-align: center; font-weight: 800; font-size: 0.85rem;">${pda.pda_number}</td>
-            <td>
-                <textarea class="form-control pda-topic" placeholder="Proceso de Desarrollo de Aprendizaje (PDA)" rows="2" style="padding: 6px 8px; resize: vertical; font-size: 0.8rem; height: 50px;">${htmlspecialchars(pda.topic)}</textarea>
+            <td class="col-no">${pda.pda_number}</td>
+            <td class="col-pda">
+                <textarea class="form-control pda-field pda-topic" placeholder="Proceso de Desarrollo de Aprendizaje (PDA)" rows="2">${htmlspecialchars(pda.topic)}</textarea>
             </td>
-            <td>
-                <textarea class="form-control pda-temas" placeholder="Temas a Atender" rows="2" style="padding: 6px 8px; resize: vertical; font-size: 0.8rem; height: 50px;">${htmlspecialchars(pda.temas || '')}</textarea>
+            <td class="col-temas">
+                <textarea class="form-control pda-field pda-temas" placeholder="Temas a Atender" rows="2">${htmlspecialchars(pda.temas || '')}</textarea>
             </td>
-            <td>
-                <input type="number" class="form-control pda-sessions" value="${pda.sessions_count}" min="0" max="${totalSessions}" style="padding: 6px 8px; text-align: center; font-weight: 700; font-size: 0.8rem;">
+            <td class="col-sesiones">
+                <input type="number" class="form-control pda-field pda-sessions" value="${pda.sessions_count}" min="0" max="${totalSessions}">
             </td>
-            <td>
-                <input type="text" class="form-control pda-verb" value="${htmlspecialchars(pda.verbo_rector)}" placeholder="Verbo" style="padding: 6px 8px; font-weight: 600; font-size: 0.8rem;">
+            <td class="col-verbo-rector">
+                <input type="text" class="form-control pda-field pda-verb" value="${htmlspecialchars(pda.verbo_rector)}" placeholder="Verbo">
             </td>
-            <td>
-                <select class="form-control pda-complejidad" style="padding: 4px 6px; font-size: 0.8rem; height: auto;">
-                    <option value="Baja" ${pda.complejidad === 'Baja' ? 'selected' : ''}>Baja</option>
-                    <option value="Media" ${pda.complejidad === 'Media' || !pda.complejidad ? 'selected' : ''}>Media</option>
-                    <option value="Alta" ${pda.complejidad === 'Alta' ? 'selected' : ''}>Alta</option>
-                </select>
+            <td class="col-complejidad">
+                <input type="text" class="form-control pda-field pda-complejidad" value="${htmlspecialchars(pda.complejidad || '')}" placeholder="Complejidad">
             </td>
-            <td>
-                <input type="text" class="form-control pda-rango" value="${htmlspecialchars(pda.rango_sugerido || '')}" placeholder="Ej. 8 a 10 sesiones" style="padding: 6px 8px; font-size: 0.8rem;">
+            <td class="col-rango">
+                <input type="text" class="form-control pda-field pda-rango" value="${htmlspecialchars(pda.rango_sugerido || '')}" placeholder="Ej. 8 a 10 sesiones">
             </td>
-            <td style="text-align: center;">
+            <td class="col-accion">
                 <button class="btn btn-danger btn-sm pda-delete-btn" style="padding: 4px 8px;">🗑️</button>
             </td>
         `;
@@ -309,13 +370,18 @@ function renderPdaRows(pdas, totalSessions) {
         const verbInput = tr.querySelector('.pda-verb');
         topicTextarea.addEventListener('input', () => {
             verbInput.value = getRectorVerb(topicTextarea.value);
+            fitCompactColumns();
         });
+
+        bindCompactColumnInput(verbInput);
+        bindCompactColumnInput(tr.querySelector('.pda-complejidad'));
 
         // Eliminar fila
         tr.querySelector('.pda-delete-btn').addEventListener('click', () => {
             if (confirm(`¿Eliminar la fila del PDA ${pda.pda_number}?`)) {
                 tr.remove();
                 reindexPdaNumbers();
+                fitCompactColumns();
                 updateSessionsBalance(totalSessions);
             }
         });
@@ -326,6 +392,7 @@ function renderPdaRows(pdas, totalSessions) {
         tbody.appendChild(tr);
     });
 
+    fitCompactColumns();
     updateSessionsBalance(totalSessions);
 }
 
@@ -376,33 +443,29 @@ function addNewPdaRow(planeacionId) {
     const tr = document.createElement('tr');
     tr.setAttribute('data-pda-number', nextNum);
     tr.innerHTML = `
-        <td>
-            <textarea class="form-control pda-contenido" placeholder="Contenido" rows="2" style="padding: 6px 8px; resize: vertical; font-size: 0.8rem; height: 50px; font-weight: 500;"></textarea>
+        <td class="col-contenido">
+            <textarea class="form-control pda-field pda-contenido" placeholder="Contenido" rows="2"></textarea>
         </td>
-        <td style="text-align: center; font-weight: 800; font-size: 0.85rem;">${nextNum}</td>
-        <td>
-            <textarea class="form-control pda-topic" placeholder="PDA" rows="2" style="padding: 6px 8px; resize: vertical; font-size: 0.8rem; height: 50px;"></textarea>
+        <td class="col-no">${nextNum}</td>
+        <td class="col-pda">
+            <textarea class="form-control pda-field pda-topic" placeholder="Proceso de Desarrollo de Aprendizaje (PDA)" rows="2"></textarea>
         </td>
-        <td>
-            <textarea class="form-control pda-temas" placeholder="Temas a Atender" rows="2" style="padding: 6px 8px; resize: vertical; font-size: 0.8rem; height: 50px;"></textarea>
+        <td class="col-temas">
+            <textarea class="form-control pda-field pda-temas" placeholder="Temas a Atender" rows="2"></textarea>
         </td>
-        <td>
-            <input type="number" class="form-control pda-sessions" value="0" min="0" max="${totalSessions}" style="padding: 6px 8px; text-align: center; font-weight: 700; font-size: 0.8rem;">
+        <td class="col-sesiones">
+            <input type="number" class="form-control pda-field pda-sessions" value="0" min="0" max="${totalSessions}">
         </td>
-        <td>
-            <input type="text" class="form-control pda-verb" value="" placeholder="Verbo" style="padding: 6px 8px; font-weight: 600; font-size: 0.8rem;">
+        <td class="col-verbo-rector">
+            <input type="text" class="form-control pda-field pda-verb" value="" placeholder="Verbo">
         </td>
-        <td>
-            <select class="form-control pda-complejidad" style="padding: 4px 6px; font-size: 0.8rem; height: auto;">
-                <option value="Baja">Baja</option>
-                <option value="Media" selected>Media</option>
-                <option value="Alta">Alta</option>
-            </select>
+        <td class="col-complejidad">
+            <input type="text" class="form-control pda-field pda-complejidad" value="" placeholder="Complejidad">
         </td>
-        <td>
-            <input type="text" class="form-control pda-rango" value="" placeholder="Ej. 8 a 10 sesiones" style="padding: 6px 8px; font-size: 0.8rem;">
+        <td class="col-rango">
+            <input type="text" class="form-control pda-field pda-rango" value="" placeholder="Ej. 8 a 10 sesiones">
         </td>
-        <td style="text-align: center;">
+        <td class="col-accion">
             <button class="btn btn-danger btn-sm pda-delete-btn" style="padding: 4px 8px;">🗑️</button>
         </td>
     `;
@@ -411,11 +474,16 @@ function addNewPdaRow(planeacionId) {
     const verbInput = tr.querySelector('.pda-verb');
     topicTextarea.addEventListener('input', () => {
         verbInput.value = getRectorVerb(topicTextarea.value);
+        fitCompactColumns();
     });
+
+    bindCompactColumnInput(verbInput);
+    bindCompactColumnInput(tr.querySelector('.pda-complejidad'));
 
     tr.querySelector('.pda-delete-btn').addEventListener('click', () => {
         tr.remove();
         reindexPdaNumbers();
+        fitCompactColumns();
         updateSessionsBalance(totalSessions);
     });
 
@@ -423,6 +491,7 @@ function addNewPdaRow(planeacionId) {
 
     tbody.appendChild(tr);
     reindexPdaNumbers();
+    fitCompactColumns();
     updateSessionsBalance(totalSessions);
 }
 
@@ -1306,7 +1375,7 @@ function initBackupPanel() {
             // Limpiar selector y regresar a vista de configuración inicial
             defaultDbFileInput.value = '';
             activePlaneacionId = null;
-            document.getElementById('dosificar-planner').style.display = 'none';
+            setPlannerLayoutActive(false);
             document.getElementById('dosificar-setup').style.display = 'block';
             document.body.classList.add('bg-grid-pattern');
 

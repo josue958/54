@@ -5,8 +5,6 @@
  */
 const ExcelExport = (() => {
 
-    const MONTHS_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-
     // Función principal para exportar la dosificación y cronograma
     async function exportarCronograma(cycleId, planeacionId) {
         try {
@@ -33,53 +31,39 @@ const ExcelExport = (() => {
 
             const workbook = new ExcelJS.Workbook();
             await workbook.xlsx.load(arrayBuffer);
-            const ws = workbook.getWorksheet(1);
+            const ws = workbook.worksheets[0];
 
             // 3. Escribir Encabezados
-            // Fila 2: Ciclo Escolar
-            ws.getCell('I2').value = `CICLO ESCOLAR: ${cycle.name.toUpperCase()}`;
-            ws.getCell('AD2').value = `CICLO ESCOLAR: ${cycle.name.toUpperCase()}`;
+            const disciplinaStr = ` ${planeacion.disciplina.toUpperCase()}    ${planeacion.grado}º. GRADO         ${cycle.name.toUpperCase()}`;
+            ws.getCell('A4').value = disciplinaStr;
 
-            // Fila 4: Disciplina y Grado
-            const disciplinaStr = `DISCIPLINA: ${planeacion.disciplina.toUpperCase()} - ${planeacion.grado}º GRADO`;
-            ws.getCell('D4').value = disciplinaStr;
-            ws.getCell('AD4').value = disciplinaStr;
-
-            // 4. Limpiar columnas de calendario (columna I/9 en adelante, fila 6 a 60)
-            for (let r = 6; r <= 60; r++) {
+            // 4. Limpiar datos de ejemplo del template
+            // Remove existing merges from row 6 onwards
+            const mergesToRemove = [];
+            for (const merge in ws._merges) {
+                const [start, end] = merge.split(':');
+                const startRow = parseInt(start.replace(/\D/g, ''));
+                if (startRow >= 6) {
+                    mergesToRemove.push(merge);
+                }
+            }
+            mergesToRemove.forEach(m => ws.unMergeCells(m));
+            
+            // Clear content and styles for rows 6 to 100
+            for (let r = 6; r <= 100; r++) {
                 const row = ws.getRow(r);
-                for (let col = 9; col <= 60; col++) {
-                    row.getCell(col).value = null;
-                    row.getCell(col).fill = { type: 'pattern', pattern: 'none' };
-                    row.getCell(col).border = { top: null, bottom: null, left: null, right: null };
+                for (let c = 1; c <= 8; c++) {
+                    const cell = row.getCell(c);
+                    cell.value = null;
+                    cell.border = {};
+                    cell.fill = { type: 'pattern', pattern: 'none' };
                 }
             }
 
-            // Escribir cabeceras de la tabla de PDAs en fila 5 (A-H)
-            const headers = [
-                "CONTENIDO",
-                "No PROGR. PDA",
-                "PROCESOS DE DESARROLLO DE APRENDIZAJE      PDA",
-                "TEMAS A ATENDER PARA EL LOGRO DE LOS PROCESOS DE DESARROLLO DE APRENDIZAJE",
-                "No. DE SESIONES PARA EL LOGRO DEL PDA.",
-                "Verbo Rector",
-                "Complejidad",
-                "Rango Sugerido"
-            ];
-            headers.forEach((h, colIdx) => {
-                const cell = ws.getCell(5, colIdx + 1);
-                cell.value = h;
-                cell.font = { bold: true, size: 8 };
-                cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-                cell.border = {
-                    top: { style: 'thin' },
-                    bottom: { style: 'thin' },
-                    left: { style: 'thin' },
-                    right: { style: 'thin' }
-                };
-            });
+            // 5. Escribir lista de PDAs en columnas A-H (1 a 8)
+            let startMergeRow = 6;
+            let currentContenido = pdas.length > 0 ? pdas[0].contenido : null;
 
-            // Escribir lista de PDAs en columnas A-H (1 a 8)
             pdas.forEach((pda, i) => {
                 const rIdx = 6 + i;
                 const row = ws.getRow(rIdx);
@@ -106,169 +90,27 @@ const ExcelExport = (() => {
                         left: { style: 'thin' },
                         right: { style: 'thin' }
                     };
-                    cell.font = { size: 9 };
+                    cell.font = { name: 'Arial', size: 10 };
                 }
-            });
 
-            // Eliminar merges existentes desde la fila 6 en adelante en columnas de calendario (col >= 9)
-            const mergesToRemove = [];
-            for (const merge in ws._merges) {
-                const [start, end] = merge.split(':');
-                const startRow = parseInt(start.replace(/\D/g, ''));
-                const startColStr = start.replace(/\d/g, '');
-                // Convertir letra de columna a índice
-                let colIdx = 0;
-                for (let charIdx = 0; charIdx < startColStr.length; charIdx++) {
-                    colIdx = colIdx * 26 + (startColStr.charCodeAt(charIdx) - 64);
-                }
-                if (startRow >= 6 && colIdx >= 9) {
-                    mergesToRemove.push(merge);
-                }
-            }
-            mergesToRemove.forEach(m => ws.unMergeCells(m));
-
-            // 5. Calcular distribución y mapeo de fechas
-            const holidays = JSON.parse(cycle.holidays || '{}');
-            const schoolDays = calculateSchoolDays(cycle.start_date, cycle.total_days, holidays);
-            
-            const schedule = JSON.parse(planeacion.schedule || '{}');
-            const sessions = mapSessions(schoolDays, schedule, cycle.period1_days, cycle.period2_days);
-
-            // Generar el mapa de fecha -> PDA Número
-            const datePdaMap = {};
-            let sessionIdx = 0;
-            pdas.forEach(pda => {
-                const count = pda.sessions_count;
-                for (let c = 0; c < count; c++) {
-                    if (sessionIdx < sessions.length) {
-                        const sess = sessions[sessionIdx];
-                        datePdaMap[sess.date] = pda.pda_number;
-                        sessionIdx++;
+                // Lógica para combinar celdas de "Contenido"
+                if (i === pdas.length - 1 || pdas[i+1].contenido !== currentContenido) {
+                    if (rIdx > startMergeRow) {
+                        ws.mergeCells(`A${startMergeRow}:A${rIdx}`);
+                    }
+                    if (i < pdas.length - 1) {
+                        startMergeRow = rIdx + 1;
+                        currentContenido = pdas[i+1].contenido;
                     }
                 }
             });
 
-            // 6. Configurar colores y estilos
-            const pdaColorsHex = [
-                'FFB3BA', 'FFDFBA', 'FFFFBA', 'BAFFC9', 'BAE1FF',
-                'E8BAFF', 'FFBAE8', 'C9C9FF', 'FFD1D1', 'E2F0CB'
-            ];
-            const getPdaColor = (pdaNum) => {
-                const num = parseInt(pdaNum) || 1;
-                return pdaColorsHex[(num - 1) % pdaColorsHex.length];
-            };
-            const HOLIDAY_COLOR = 'FFFFC6C6'; // Rojo suave para festivos
-
-            // 7. Agrupar meses del ciclo y dibujarlos en 2 columnas (A-Y y Z-AW)
-            const cycleMonths = getCycleMonths(cycle.start_date, cycle.end_date);
-            const midPoint = Math.ceil(cycleMonths.length / 2);
-
-            cycleMonths.forEach(({year, month}, index) => {
-                const isLeft = index < midPoint;
-                const localIndex = isLeft ? index : index - midPoint;
-                const startRow = 6 + (localIndex * 5);
-                const startCol = isLeft ? 1 : 26; // Columna A=1, Z=26
-
-                const workdays = getMonthWorkdays(year, month, holidays);
-                if (!workdays.length) return;
-
-                // Fila 1: Etiqueta 'MES'
-                ws.getCell(startRow, startCol).value = 'MES';
-                ws.getCell(startRow, startCol).font = { bold: true, size: 9 };
-                ws.getCell(startRow, startCol).alignment = { horizontal: 'center', vertical: 'middle' };
-
-                // Fila 2: Nombre de Mes
-                ws.getCell(startRow + 1, startCol).value = MONTHS_ES[month].toUpperCase();
-                ws.getCell(startRow + 1, startCol).font = { bold: true, size: 9 };
-                ws.getCell(startRow + 1, startCol).alignment = { horizontal: 'center', vertical: 'middle' };
-
-                // Fila 3: Etiqueta 'PDA'
-                ws.getCell(startRow + 2, startCol).value = 'PDA';
-                ws.getCell(startRow + 2, startCol).font = { bold: true, size: 9 };
-                ws.getCell(startRow + 2, startCol).alignment = { horizontal: 'center', vertical: 'middle' };
-
-                // Fila 4: Etiqueta 'SEGUIMIENTO DOCENTE'
-                ws.getCell(startRow + 3, startCol).value = 'SEGUIMIENTO';
-                ws.getCell(startRow + 3, startCol).font = { bold: true, size: 8 };
-                ws.getCell(startRow + 3, startCol).alignment = { horizontal: 'center', vertical: 'middle' };
-
-                let currentPda = null;
-                let currentHoliday = null;
-                let pdaStartCol = -1;
-                let holidayStartCol = -1;
-
-                const commitBlock = (type, label, sCol, eCol, rowIdx) => {
-                    if (sCol === -1) return;
-                    if (sCol !== eCol) ws.mergeCells(rowIdx, sCol, rowIdx, eCol);
-                    const cell = ws.getCell(rowIdx, sCol);
-                    cell.value = type === 'holiday' ? label : (type === 'pda' ? `PDA ${label}` : label);
-                    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-                    cell.font = { bold: true, size: 8 };
-
-                    if (type === 'holiday') {
-                        for (let c = sCol; c <= eCol; c++) {
-                            ws.getCell(rowIdx - 1, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HOLIDAY_COLOR } };
-                            ws.getCell(rowIdx, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HOLIDAY_COLOR } };
-                        }
-                    } else if (type === 'pda') {
-                        const colHex = getPdaColor(label);
-                        for (let c = sCol; c <= eCol; c++) {
-                            ws.getCell(rowIdx, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colHex } };
-                        }
-                    }
-                };
-
-                workdays.forEach((dayInfo, dIndex) => {
-                    const col = startCol + 1 + dIndex;
-                    const dateStr = dayInfo.date;
-
-                    // Letra del día (L, M, M, J, V)
-                    const cellLetter = ws.getCell(startRow, col);
-                    cellLetter.value = dayInfo.letter;
-                    cellLetter.alignment = { horizontal: 'center', vertical: 'middle' };
-                    cellLetter.border = { top: {style:'thin'}, bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
-
-                    // Número de día
-                    const cellNum = ws.getCell(startRow + 1, col);
-                    cellNum.value = dayInfo.num;
-                    cellNum.alignment = { horizontal: 'center', vertical: 'middle' };
-                    cellNum.border = { top: {style:'thin'}, bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
-
-                    // Verificar PDA o Festivo
-                    const pdaNum = datePdaMap[dateStr];
-                    const holidayLabel = holidays[dateStr];
-
-                    if (holidayLabel) {
-                        if (currentPda) { commitBlock('pda', currentPda, pdaStartCol, col - 1, startRow + 2); currentPda = null; pdaStartCol = -1; }
-                        if (currentHoliday !== holidayLabel) {
-                            if (currentHoliday) commitBlock('holiday', currentHoliday, holidayStartCol, col - 1, startRow + 2);
-                            currentHoliday = holidayLabel;
-                            holidayStartCol = col;
-                        }
-                    } else if (pdaNum) {
-                        if (currentHoliday) { commitBlock('holiday', currentHoliday, holidayStartCol, col - 1, startRow + 2); currentHoliday = null; holidayStartCol = -1; }
-                        if (currentPda !== pdaNum) {
-                            if (currentPda) commitBlock('pda', currentPda, pdaStartCol, col - 1, startRow + 2);
-                            currentPda = pdaNum;
-                            pdaStartCol = col;
-                        }
-                    } else {
-                        if (currentHoliday) { commitBlock('holiday', currentHoliday, holidayStartCol, col - 1, startRow + 2); currentHoliday = null; holidayStartCol = -1; }
-                        if (currentPda) { commitBlock('pda', currentPda, pdaStartCol, col - 1, startRow + 2); currentPda = null; pdaStartCol = -1; }
-                    }
-                });
-
-                const lastCol = startCol + workdays.length;
-                if (currentHoliday) commitBlock('holiday', currentHoliday, holidayStartCol, lastCol, startRow + 2);
-                if (currentPda) commitBlock('pda', currentPda, pdaStartCol, lastCol, startRow + 2);
-            });
-
-            // 8. Generar buffer y descargar archivo
+            // 6. Generar buffer y descargar archivo
             const buffer = await workbook.xlsx.writeBuffer();
             const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
             const sanitizedSubj = planeacion.disciplina.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-            const fileName = `dosificacion-${sanitizedSubj}-${planeacion.grado}g-${planeacion.weekly_hours}hs.xlsx`;
+            const fileName = `dosificacion-${sanitizedSubj}-${planeacion.grado}g.xlsx`;
 
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -285,109 +127,6 @@ const ExcelExport = (() => {
         }
     }
 
-    function parseDateDMY(dmyStr) {
-        if (!dmyStr) return null;
-        const parts = dmyStr.split('-');
-        if (parts.length === 3) {
-            return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
-        }
-        return null;
-    }
-
-    function formatDateDMY(date) {
-        const d = new Date(date);
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        return `${day}-${month}-${year}`;
-    }
-
-    // Funciones auxiliares para calcular días hábiles
-    function calculateSchoolDays(startDate, totalDays, holidays) {
-        const days = [];
-        let current = parseDateDMY(startDate);
-        let count = 0;
-        let limit = 0;
-
-        while (count < totalDays && limit < 1000) {
-            limit++;
-            const w = current.getDay(); // 0 = Domingo, 6 = Sábado
-            const dateStr = formatDateDMY(current);
-
-            if (w !== 0 && w !== 6 && !holidays[dateStr]) {
-                days.push(dateStr);
-                count++;
-            }
-            current.setDate(current.getDate() + 1);
-        }
-        return days;
-    }
-
-    function mapSessions(schoolDays, schedule, p1Days, p2Days) {
-        const sessions = [];
-        const p1Limit = p1Days;
-        const p2Limit = p1Days + p2Days;
-
-        schoolDays.forEach((dateStr, idx) => {
-            const date = parseDateDMY(dateStr);
-            const dayOfWeek = date.getDay(); // 0=Dom, 1=Lun...
-            
-            const hours = schedule[dayOfWeek] || 0;
-            if (hours > 0) {
-                let period = 1;
-                if (idx >= p2Limit) period = 3;
-                else if (idx >= p1Limit) period = 2;
-
-                for (let h = 0; h < hours; h++) {
-                    sessions.push({ date: dateStr, period });
-                }
-            }
-        });
-        return sessions;
-    }
-
-    function getCycleMonths(startDate, endDate) {
-        const months = [];
-        let current = parseDateDMY(startDate);
-        let last = parseDateDMY(endDate ? endDate : startDate);
-        if (!endDate) {
-            last.setMonth(last.getMonth() + 11); // Fallback: 11 meses adicionales
-        }
-
-        const endKey = last.getFullYear() * 12 + last.getMonth();
-        let currentKey = current.getFullYear() * 12 + current.getMonth();
-
-        while (currentKey <= endKey) {
-            months.push({
-                year: current.getFullYear(),
-                month: current.getMonth()
-            });
-            current.setMonth(current.getMonth() + 1);
-            currentKey = current.getFullYear() * 12 + current.getMonth();
-        }
-        return months;
-    }
-
-    function getMonthWorkdays(year, month, holidays) {
-        const workdays = [];
-        const date = new Date(year, month, 1);
-        const daysLabel = ["D", "L", "M", "M", "J", "V", "S"];
-
-        while (date.getMonth() === month) {
-            const w = date.getDay();
-            const dateStr = formatDateDMY(date);
-
-            if (w !== 0 && w !== 6) {
-                workdays.push({
-                    date: dateStr,
-                    letter: daysLabel[w],
-                    num: date.getDate()
-                });
-            }
-            date.setDate(date.getDate() + 1);
-        }
-        return workdays;
-    }
-
     return { exportarCronograma };
 })();
+
