@@ -71,8 +71,6 @@ function initTabSwitcher() {
                 renderPlaneacionesList();
             } else if (target === 'tab-ciclos') {
                 renderCyclesList();
-            } else if (target === 'tab-cronogramas') {
-                renderCronogramasDashboard();
             }
 
             tabBtns.forEach(b => b.classList.remove('active'));
