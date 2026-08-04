@@ -72,6 +72,9 @@ function _initSchema() {
         temas TEXT NOT NULL DEFAULT '',
         complejidad TEXT NOT NULL DEFAULT '',
         rango_sugerido TEXT NOT NULL DEFAULT '',
+        start_date TEXT NOT NULL DEFAULT '',
+        end_date TEXT NOT NULL DEFAULT '',
+        detalles_planeacion TEXT NOT NULL DEFAULT '{}',
         FOREIGN KEY (planeacion_id) REFERENCES planeaciones(id) ON DELETE CASCADE
     );`);
 }
@@ -88,6 +91,15 @@ function _runMigrations() {
     } catch(e){}
     try {
         _db.run("ALTER TABLE planeacion_pdas ADD COLUMN rango_sugerido TEXT NOT NULL DEFAULT ''");
+    } catch(e){}
+    try {
+        _db.run("ALTER TABLE planeacion_pdas ADD COLUMN start_date TEXT NOT NULL DEFAULT ''");
+    } catch(e){}
+    try {
+        _db.run("ALTER TABLE planeacion_pdas ADD COLUMN end_date TEXT NOT NULL DEFAULT ''");
+    } catch(e){}
+    try {
+        _db.run("ALTER TABLE planeacion_pdas ADD COLUMN detalles_planeacion TEXT NOT NULL DEFAULT '{}'");
     } catch(e){}
 }
 
@@ -227,7 +239,7 @@ function exportDatabase() {
     const url  = URL.createObjectURL(new Blob([data], {type: 'application/octet-stream'}));
     const a    = Object.assign(document.createElement('a'), {
         href: url,
-        download: `dosificador-nem-${new Date().toISOString().split('T')[0]}.sqlite`
+        download: `planeador-nem-${new Date().toISOString().split('T')[0]}.sqlite`
     });
     document.body.appendChild(a); 
     a.click(); 

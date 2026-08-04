@@ -109,7 +109,11 @@ function initSetupForm() {
     const dayInputs = document.querySelectorAll('#setup-plan-form .day-input');
     const errorMsg = document.getElementById('setup-schedule-error');
     const submitBtn = document.getElementById('setup-submit-btn');
-    const form = document.getElementById('setup-plan-form');
+    const setupForm = document.getElementById('setup-plan-form');
+    if (setupForm) {
+        setupForm.addEventListener('submit', handleSetupSubmit);
+        setupForm.addEventListener('input', () => markAsUnsaved('setup-submit-btn'));
+    }
 
     function validateHours() {
         let sum = 0;
@@ -358,7 +362,12 @@ function renderPdaRows(pdas, totalSessions) {
             <td class="col-rango">
                 <input type="text" class="form-control pda-field pda-rango" value="${htmlspecialchars(pda.rango_sugerido || '')}" placeholder="Ej. 8 a 10 sesiones">
             </td>
-            <td class="col-accion">
+            <td class="col-fecha">
+                <input type="date" class="form-control pda-field pda-end-date" value="${pda.end_date || ''}">
+            </td>
+            <td class="col-accion" style="min-width: 90px;">
+                <input type="hidden" class="pda-detalles-input" value="${htmlspecialchars(pda.detalles_planeacion || '{}')}">
+                <button class="btn btn-secondary btn-sm pda-detail-btn" style="padding: 4px 8px; margin-right: 4px;">PDA</button>
                 <button class="btn btn-danger btn-sm pda-delete-btn" style="padding: 4px 8px;">🗑️</button>
             </td>
         `;
@@ -369,6 +378,7 @@ function renderPdaRows(pdas, totalSessions) {
         topicTextarea.addEventListener('input', () => {
             verbInput.value = getRectorVerb(topicTextarea.value);
             fitCompactColumns();
+            markAsUnsaved('planner-btn-save');
         });
 
         bindCompactColumnInput(verbInput);
@@ -376,12 +386,17 @@ function renderPdaRows(pdas, totalSessions) {
 
         // Eliminar fila
         tr.querySelector('.pda-delete-btn').addEventListener('click', () => {
-            if (confirm(`¿Eliminar la fila del PDA ${pda.pda_number}?`)) {
+            if (confirm('¿Eliminar este PDA de la tabla?')) {
                 tr.remove();
-                reindexPdaNumbers();
+                renumberPdas();
+                markAsUnsaved('planner-btn-save');
                 fitCompactColumns();
                 updateSessionsBalance(totalSessions);
             }
+        });
+        
+        tr.querySelector('.pda-detail-btn').addEventListener('click', () => {
+            openPdaDetailModal(tr);
         });
 
         // Al cambiar sesiones, actualizar balance
@@ -463,7 +478,12 @@ function addNewPdaRow(planeacionId) {
         <td class="col-rango">
             <input type="text" class="form-control pda-field pda-rango" value="" placeholder="Ej. 8 a 10 sesiones">
         </td>
-        <td class="col-accion">
+        <td class="col-fecha">
+            <input type="date" class="form-control pda-field pda-end-date">
+        </td>
+        <td class="col-accion" style="min-width: 90px;">
+            <input type="hidden" class="pda-detalles-input" value="{}">
+            <button class="btn btn-secondary btn-sm pda-detail-btn" style="padding: 4px 8px; margin-right: 4px;">PDA</button>
             <button class="btn btn-danger btn-sm pda-delete-btn" style="padding: 4px 8px;">🗑️</button>
         </td>
     `;
@@ -473,16 +493,24 @@ function addNewPdaRow(planeacionId) {
     topicTextarea.addEventListener('input', () => {
         verbInput.value = getRectorVerb(topicTextarea.value);
         fitCompactColumns();
+        markAsUnsaved('planner-btn-save');
     });
 
     bindCompactColumnInput(verbInput);
     bindCompactColumnInput(tr.querySelector('.pda-complejidad'));
 
     tr.querySelector('.pda-delete-btn').addEventListener('click', () => {
-        tr.remove();
-        reindexPdaNumbers();
-        fitCompactColumns();
-        updateSessionsBalance(totalSessions);
+        if (confirm('¿Eliminar este PDA de la tabla?')) {
+            tr.remove();
+            renumberPdas();
+            markAsUnsaved('planner-btn-save');
+            fitCompactColumns();
+            updateSessionsBalance(totalSessions);
+        }
+    });
+    
+    tr.querySelector('.pda-detail-btn').addEventListener('click', () => {
+        openPdaDetailModal(tr);
     });
 
     tr.querySelector('.pda-sessions').addEventListener('input', () => updateSessionsBalance(totalSessions));
@@ -543,7 +571,17 @@ async function savePdaPlannerChanges(planeacionId, totalSessions) {
    MIS PLANEACIONES (CRUD)
    ========================================================= */
 function initPlanCRUD() {
-    const editForm = document.getElementById('edit-plan-form');
+    const pdasTbody = document.getElementById('pdas-tbody');
+    if (pdasTbody) {
+        pdasTbody.addEventListener('input', () => markAsUnsaved('planner-btn-save'));
+        pdasTbody.addEventListener('change', () => markAsUnsaved('planner-btn-save'));
+    }
+
+    const editPlanForm = document.getElementById('edit-plan-form');
+    if (editPlanForm) {
+        editPlanForm.addEventListener('submit', handleEditPlanSubmit);
+        editPlanForm.addEventListener('input', () => markAsUnsaved('edit-plan-submit-btn'));
+    }
     const newPlanBtn = document.getElementById('btn-new-planification');
     
     // Configurar validación de horario en el modal de edición
@@ -1650,5 +1688,152 @@ async function importHolidaysFromExcel(file) {
     } catch (e) {
         console.error(e);
         showToast('Error al importar festivos: ' + e.message, 'error');
+    }
+}
+
+let currentPdaDetailRow = null;
+
+function openPdaDetailModal(tr) {
+    currentPdaDetailRow = tr;
+    const detallesInput = tr.querySelector('.pda-detalles-input').value;
+    let data = {};
+    try {
+        data = JSON.parse(detallesInput || '{}');
+    } catch(e) { }
+
+    document.getElementById('pda-ejes').value = data.ejes || '';
+    document.getElementById('pda-nombre-proyecto').value = data.nombre_proyecto || '';
+    document.getElementById('pda-producto').value = data.producto || '';
+    document.getElementById('pda-problematica').value = data.problematica || '';
+    document.getElementById('pda-proposito').value = data.proposito || '';
+    document.getElementById('pda-desarrollo-sesiones').value = data.desarrollo_sesiones || '';
+    document.getElementById('pda-rubrica').value = data.rubrica || '';
+    document.getElementById('pda-teoria').value = data.teoria || '';
+    document.getElementById('pda-observaciones').value = data.observaciones || '';
+
+    document.getElementById('pda-detail-modal').style.display = 'flex';
+}
+
+function closePdaDetailModal() {
+    document.getElementById('pda-detail-modal').style.display = 'none';
+    currentPdaDetailRow = null;
+}
+
+document.getElementById('pda-detail-form').addEventListener('input', () => {
+    markAsUnsaved('pda-modal-save-btn');
+});
+
+document.getElementById('pda-detail-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!currentPdaDetailRow) return;
+
+    const data = {
+        ejes: document.getElementById('pda-ejes').value,
+        nombre_proyecto: document.getElementById('pda-nombre-proyecto').value,
+        producto: document.getElementById('pda-producto').value,
+        problematica: document.getElementById('pda-problematica').value,
+        proposito: document.getElementById('pda-proposito').value,
+        desarrollo_sesiones: document.getElementById('pda-desarrollo-sesiones').value,
+        rubrica: document.getElementById('pda-rubrica').value,
+        teoria: document.getElementById('pda-teoria').value,
+        observaciones: document.getElementById('pda-observaciones').value,
+    };
+
+    currentPdaDetailRow.querySelector('.pda-detalles-input').value = JSON.stringify(data);
+    closePdaDetailModal();
+    showToast('Detalles guardados en la fila. ¡No olvides Guardar Cambios en la tabla principal!', 'success');
+});
+
+async function generateWithGeminiAI() {
+    if (!currentPdaDetailRow || !activePlaneacionId) return;
+
+    const apiKey = localStorage.getItem('gemini_api_key');
+    if (!apiKey) {
+        showToast('Falta API Key. Cárgala recargando la página.', 'error');
+        return;
+    }
+
+    const plans = dbQuery("SELECT * FROM planeaciones WHERE id = ?", [activePlaneacionId]);
+    if (!plans.length) return;
+    const plan = plans[0];
+
+    const pdaTopic = currentPdaDetailRow.querySelector('.pda-topic').value;
+    const temas = currentPdaDetailRow.querySelector('.pda-temas').value;
+    const sesiones = currentPdaDetailRow.querySelector('.pda-sessions').value;
+    
+    const btn = document.querySelector('#pda-detail-modal .btn-primary[onclick="generateWithGeminiAI()"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = "⏳ Generando...";
+    }
+
+    const promptText = `ROL:
+Eres un profesor de secundaria en México, ubicada en Estado de México. Tus alumnos presentan estilos de aprendizaje kinestésico y visual, por lo que los proyectos deben ser actividades ludicas enfocadas en estos tipos de aprendizaje, debe enfocarse en combatir la apatia en clase, consider que los materiales para trabajar solo pizarron, plumon, borrador y los alumnos solo ocupan cuaderno, pluma, juego geometrico, colores, para trabajar en cada sesion, no debes pedirme recurso distintos a estos, deben ser practicos y en ocaciones grupales, que fomenten el uso de valores que deberían aprender en casa, como disciplina, honestidad, respeto, lealtad, respeto al labor patrio, trabajo en equipo, etc.
+
+Desarrolla una planeación didáctica detallada siguiendo las indicaciones:
+- Sesiones de 50 minutos. (Inicio, Desarrollo, Cierre).
+- El numero de sesiones es de ${sesiones} sesiones.
+- 4 Momentos del proyecto: Momento 1 (Planteamiento), Momento 2 (Implementación), Momento 3 (Presentación), Fase 4 (Evaluación).
+- PDA: ${pdaTopic}
+- Campo Formativo: (Acorde a ${plan.disciplina})
+- Temas: ${temas}
+
+Debes responder ESTRICTAMENTE con un objeto JSON válido con la siguiente estructura (NO agregues comillas invertidas Markdown, SOLO devuelve el JSON puro):
+{
+  "campo_formativo": "El campo formativo al que pertenece",
+  "ejes": "Los ejes articuladores relevantes para este PDA (separados por coma)",
+  "nombre_proyecto": "Un nombre creativo",
+  "problematica": "Contexto de la problemática",
+  "proposito": "Propósito",
+  "producto": "Producto final",
+  "desarrollo_sesiones": "Todo el desarrollo de los momentos y sesiones detalladas",
+  "rubrica": "DEBE ser una tabla en formato Markdown con las columnas: 'Criterios de Evaluación', 'Indicadores de Logro', 'Calificación'",
+  "teoria": "Teoría clara y 5 ejemplos para el docente"
+}`;
+
+    try {
+        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=' + apiKey, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: promptText }] }],
+                generationConfig: { response_mime_type: "application/json" }
+            })
+        });
+
+        if (!response.ok) {
+            const errResult = await response.json();
+            throw new Error('Error en la API de Gemini: ' + (errResult.error?.message || response.statusText));
+        }
+
+        const result = await response.json();
+        let content = result.candidates[0].content.parts[0].text;
+        
+        try {
+            const data = JSON.parse(content);
+            document.getElementById('pda-campo-formativo').value = data.campo_formativo || '';
+            document.getElementById('pda-ejes').value = data.ejes || '';
+            document.getElementById('pda-nombre-proyecto').value = data.nombre_proyecto || '';
+            document.getElementById('pda-problematica').value = data.problematica || '';
+            document.getElementById('pda-proposito').value = data.proposito || '';
+            document.getElementById('pda-producto').value = data.producto || '';
+            document.getElementById('pda-desarrollo-sesiones').value = data.desarrollo_sesiones || '';
+            document.getElementById('pda-rubrica').value = data.rubrica || '';
+            document.getElementById('pda-teoria').value = data.teoria || '';
+            
+            showToast('Planeación generada exitosamente.', 'success');
+        } catch(e) {
+            console.error(e, content);
+            showToast('Error al procesar el JSON de Gemini.', 'error');
+        }
+        
+    } catch(err) {
+        console.error(err);
+        showToast(err.message, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = "✨ Generar con Gemini AI";
+        }
     }
 }

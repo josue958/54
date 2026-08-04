@@ -13,11 +13,11 @@ const ExcelExport = (() => {
             // 1. Obtener ciclo y planeación de la base de datos
             const cycles = dbQuery("SELECT * FROM school_cycles WHERE id = ?", [cycleId]);
             const plans = dbQuery("SELECT * FROM planeaciones WHERE id = ?", [planeacionId]);
-            
+
             if (!cycles.length || !plans.length) {
                 throw new Error("Ciclo escolar o planeación no encontrados.");
             }
-            
+
             const cycle = cycles[0];
             const planeacion = plans[0];
             const pdas = dbQuery("SELECT * FROM planeacion_pdas WHERE planeacion_id = ? ORDER BY pda_number ASC", [planeacionId]);
@@ -35,10 +35,10 @@ const ExcelExport = (() => {
 
             // 3. Escribir Encabezados
             const disciplinaStr = ` ${planeacion.disciplina.toUpperCase()}    ${planeacion.grado}º. GRADO         ${cycle.name.toUpperCase()}`;
-            ws.getCell('A4').value = disciplinaStr;
+            ws.getCell('A2').value = disciplinaStr;
 
             // 4. Limpiar datos de ejemplo del template
-            // Remove existing merges from row 6 onwards
+            // Remove existing merges from row 4 onwards
             const mergesToRemove = [];
             for (const merge in ws._merges) {
                 const [start, end] = merge.split(':');
@@ -48,11 +48,11 @@ const ExcelExport = (() => {
                 }
             }
             mergesToRemove.forEach(m => ws.unMergeCells(m));
-            
-            // Clear content and styles for rows 6 to 100
-            for (let r = 6; r <= 100; r++) {
+
+            // Clear content and styles for rows 4 to 100
+            for (let r = 4; r <= 100; r++) {
                 const row = ws.getRow(r);
-                for (let c = 1; c <= 8; c++) {
+                for (let c = 1; c <= 10; c++) {
                     const cell = row.getCell(c);
                     cell.value = null;
                     cell.border = {};
@@ -60,24 +60,27 @@ const ExcelExport = (() => {
                 }
             }
 
-            // 5. Escribir lista de PDAs en columnas A-H (1 a 8)
-            let startMergeRow = 6;
+            // 5. Llenar los datos de los PDAs iterando las filas a partir de la 4
             let currentContenido = pdas.length > 0 ? pdas[0].contenido : null;
+            let startMergeRow = 4;
 
             pdas.forEach((pda, i) => {
-                const rIdx = 6 + i;
+                const rIdx = 4 + i;
                 const row = ws.getRow(rIdx);
-                
+
                 row.getCell(1).value = pda.contenido || '';
                 row.getCell(2).value = pda.pda_number;
                 row.getCell(3).value = pda.topic || '';
                 row.getCell(4).value = pda.temas || '';
                 row.getCell(5).value = pda.sessions_count;
                 row.getCell(6).value = pda.verbo_rector || '';
-                row.getCell(7).value = pda.complejidad || 'Media';
+                row.getCell(7).value = pda.complejidad || '';
                 row.getCell(8).value = pda.rango_sugerido || '';
+                row.getCell(9).value = pda.start_date || '';
+                row.getCell(10).value = pda.end_date || '';
 
-                for (let colIdx = 1; colIdx <= 8; colIdx++) {
+                // Style the row
+                for (let colIdx = 1; colIdx <= 10; colIdx++) {
                     const cell = row.getCell(colIdx);
                     cell.alignment = {
                         vertical: 'middle',
@@ -94,13 +97,13 @@ const ExcelExport = (() => {
                 }
 
                 // Lógica para combinar celdas de "Contenido"
-                if (i === pdas.length - 1 || pdas[i+1].contenido !== currentContenido) {
+                if (i === pdas.length - 1 || pdas[i + 1].contenido !== currentContenido) {
                     if (rIdx > startMergeRow) {
                         ws.mergeCells(`A${startMergeRow}:A${rIdx}`);
                     }
                     if (i < pdas.length - 1) {
                         startMergeRow = rIdx + 1;
-                        currentContenido = pdas[i+1].contenido;
+                        currentContenido = pdas[i + 1].contenido;
                     }
                 }
             });
@@ -110,7 +113,8 @@ const ExcelExport = (() => {
             const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
             const sanitizedSubj = planeacion.disciplina.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-            const fileName = `dosificacion-${sanitizedSubj}-${planeacion.grado}g.xlsx`;
+            // Genera el nombre del archivo con el formato: Dosificacion-materia-grado.xlsx (sin acentos ni espacios)
+            const fileName = `Dosificacion-${sanitizedSubj}-${planeacion.grado}.xlsx`;
 
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
