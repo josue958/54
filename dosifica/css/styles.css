@@ -555,6 +555,22 @@ body.planner-active {
   vertical-align: top;
 }
 
+.table-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 5px;
+  cursor: col-resize;
+  user-select: none;
+  height: 100%;
+  z-index: 3;
+  border-right: 2px solid #ccc;
+}
+.table-resizer:hover, .table-resizer.resizing {
+  background-color: var(--primary-color);
+  opacity: 0.5;
+}
+
 #planner-table col.col-contenido { width: 14%; }
 #planner-table col.col-pda { width: 26%; }
 #planner-table col.col-temas { width: 20%; }

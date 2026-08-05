@@ -72,8 +72,10 @@ function exportPdaToWord(btn) {
     const pdaSesiones = currentPdaDetailRow.querySelector('.pda-sessions').value;
     
     // Obtener las fechas
-    const pdaStartDate = currentPdaDetailRow.querySelector('.pda-start-date').value || '';
-    const pdaEndDate = currentPdaDetailRow.querySelector('.pda-end-date').value || '';
+    const startNode = currentPdaDetailRow.querySelector('.pda-start-date');
+    const endNode = currentPdaDetailRow.querySelector('.pda-end-date');
+    const pdaStartDate = startNode ? startNode.value : '';
+    const pdaEndDate = endNode ? endNode.value : '';
     const dateRangeStr = (pdaStartDate && pdaEndDate) ? `${pdaStartDate} a ${pdaEndDate}` : '';
 
     // Datos del formulario modal
@@ -87,7 +89,8 @@ function exportPdaToWord(btn) {
     const producto = document.getElementById('pda-producto').value || '';
     const problematica = document.getElementById('pda-problematica').value || '';
     const proposito = document.getElementById('pda-proposito').value || '';
-    const desarrollo = (document.getElementById('pda-desarrollo-sesiones').value || '').replace(/\n/g, '<br>');
+    const rawDesarrollo = document.getElementById('pda-desarrollo-sesiones').value || '';
+    const desarrollo = rawDesarrollo.replace(/\n/g, '<br>');
     const rubrica = formatMarkdownTable(document.getElementById('pda-rubrica').value);
     const teoria = (document.getElementById('pda-teoria').value || '').replace(/\n/g, '<br>');
     const observaciones = (document.getElementById('pda-observaciones').value || '').replace(/\n/g, '<br>');
@@ -240,16 +243,29 @@ function exportPdaToWord(btn) {
                 <td width="11%">Grupo: D</td>
                 <td width="11%">Grupo: E</td>
             </tr>
-            ${Array.from({length: parseInt(pdaSesiones) || 10}).map((_, i) => `
-            <tr>
-                <td style="height: 35px; padding: 5px;">Sesión ${i + 1}</td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-            </tr>`).join('')}
+            ${Array.from({length: parseInt(pdaSesiones) || 10}).map((_, i) => {
+                const sNum = i + 1;
+                let summary = `Sesión ${sNum}`;
+                // Buscar "Sesión X" y capturar hasta 100 caracteres significativos posteriores
+                const regex = new RegExp(`Sesi[óo]n\\s*${sNum}\\b[^A-Za-z0-9ÁÉÍÓÚáéíóúÑñ]*([\\s\\S]{1,120})`, 'i');
+                const match = rawDesarrollo.match(regex);
+                if (match && match[1]) {
+                    let content = match[1].replace(/\\n/g, ' ').replace(/\\*/g, '').replace(/#/g, '').trim();
+                    content = content.split(/(Sesi[óo]n|Momento)/i)[0].trim(); // Detenerse si empieza la siguiente sesión
+                    if (content.length > 80) content = content.substring(0, 77) + '...';
+                    if (content.length > 3) summary = `Sesión ${sNum}: ${content}`;
+                }
+                return `
+                <tr>
+                    <td style="height: 35px; padding: 5px; font-size: 11px;">${summary}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>`;
+            }).join('')}
         </table>
 
         <!-- P06: Teoría -->

@@ -111,7 +111,6 @@ function initSetupForm() {
     const submitBtn = document.getElementById('setup-submit-btn');
     const setupForm = document.getElementById('setup-plan-form');
     if (setupForm) {
-        setupForm.addEventListener('submit', handleSetupSubmit);
         setupForm.addEventListener('input', () => markAsUnsaved('setup-submit-btn'));
     }
 
@@ -138,7 +137,8 @@ function initSetupForm() {
         validateHours();
     }
 
-    form.addEventListener('submit', async (e) => {
+    if (setupForm) {
+        setupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const cycleId = parseInt(document.getElementById('setup-cycle').value);
@@ -205,12 +205,13 @@ function initSetupForm() {
 
             showToast('Planeación creada correctamente.', 'success');
             loadPlanification(pid);
-
+            document.getElementById('setup-discipline').value = '';
         } catch (err) {
             console.error(err);
             showToast('Error al crear planeación: ' + err.message, 'error');
         }
     });
+    } // Cierra if(setupForm)
 }
 
 /* =========================================================
@@ -336,6 +337,25 @@ function renderPdaRows(pdas, totalSessions) {
     const tbody = document.getElementById('planner-tbody');
     tbody.innerHTML = '';
 
+    // Load column widths if any
+    try {
+        const savedWidths = JSON.parse(localStorage.getItem('planner_column_widths') || 'null');
+        if (savedWidths && savedWidths.length > 0) {
+            const table = document.getElementById('planner-table');
+            if (table) {
+                const colgroup = table.querySelector('colgroup');
+                if (colgroup) {
+                    const cols = colgroup.querySelectorAll('col');
+                    cols.forEach((col, index) => {
+                        if (savedWidths[index]) {
+                            col.style.width = savedWidths[index];
+                        }
+                    });
+                }
+            }
+        }
+    } catch(e) {}
+
     pdas.forEach((pda, index) => {
         const tr = document.createElement('tr');
         tr.setAttribute('data-pda-number', pda.pda_number);
@@ -361,6 +381,9 @@ function renderPdaRows(pdas, totalSessions) {
             </td>
             <td class="col-rango">
                 <input type="text" class="form-control pda-field pda-rango" value="${htmlspecialchars(pda.rango_sugerido || '')}" placeholder="Ej. 8 a 10 sesiones">
+            </td>
+            <td class="col-fecha">
+                <input type="date" class="form-control pda-field pda-start-date" value="${pda.start_date || ''}">
             </td>
             <td class="col-fecha">
                 <input type="date" class="form-control pda-field pda-end-date" value="${pda.end_date || ''}">
@@ -479,6 +502,9 @@ function addNewPdaRow(planeacionId) {
             <input type="text" class="form-control pda-field pda-rango" value="" placeholder="Ej. 8 a 10 sesiones">
         </td>
         <td class="col-fecha">
+            <input type="date" class="form-control pda-field pda-start-date">
+        </td>
+        <td class="col-fecha">
             <input type="date" class="form-control pda-field pda-end-date">
         </td>
         <td class="col-accion" style="min-width: 90px;">
@@ -542,19 +568,33 @@ async function savePdaPlannerChanges(planeacionId, totalSessions) {
             const verb = row.querySelector('.pda-verb').value.trim();
             const complejidad = row.querySelector('.pda-complejidad').value;
             const rango = row.querySelector('.pda-rango').value.trim();
+            const startDate = row.querySelector('.pda-start-date').value;
+            const endDate = row.querySelector('.pda-end-date').value;
+            const detalles = row.querySelector('.pda-detalles-input').value;
 
             if (!topic) {
                 throw new Error(`El texto del PDA ${pdaNum} no puede estar vacío.`);
             }
 
             await dbRun(
-                `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count, contenido, temas, complejidad, rango_sugerido) VALUES(?,?,?,?,?,?,?,?,?)`,
-                [planeacionId, pdaNum, topic, verb, sCount, contenido, temas, complejidad, rango]
+                `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count, contenido, temas, complejidad, rango_sugerido, start_date, end_date, detalles_planeacion) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`,
+                [planeacionId, pdaNum, topic, verb, sCount, contenido, temas, complejidad, rango, startDate, endDate, detalles]
             );
         }
 
         // Actualizar total_pdas en la tabla principal
         await dbRun("UPDATE planeaciones SET total_pdas = ? WHERE id = ?", [rows.length, planeacionId]);
+
+        // Save column widths globally
+        const table = document.getElementById('planner-table');
+        if (table) {
+            const colgroup = table.querySelector('colgroup');
+            if (colgroup) {
+                const cols = colgroup.querySelectorAll('col');
+                const widths = Array.from(cols).map(c => c.style.width || window.getComputedStyle(c).width);
+                localStorage.setItem('planner_column_widths', JSON.stringify(widths));
+            }
+        }
 
         showToast('Cambios de dosificación guardados.', 'success');
         
@@ -571,6 +611,69 @@ async function savePdaPlannerChanges(planeacionId, totalSessions) {
    MIS PLANEACIONES (CRUD)
    ========================================================= */
 function initPlanCRUD() {
+    // Event listeners para la sección de Planeaciones
+    const btnDownload = document.getElementById('btn-download-template');
+    if (btnDownload) {
+        btnDownload.addEventListener('click', () => {
+            if (typeof ExcelExport !== 'undefined' && ExcelExport.descargarPlantilla) {
+                ExcelExport.descargarPlantilla();
+            } else {
+                showToast('El módulo de Excel no está disponible.', 'error');
+            }
+        });
+    }
+
+    const importExcelFile = document.getElementById('import-excel-file');
+    if (importExcelFile) {
+        importExcelFile.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            const planeacionId = e.target.dataset.planeacionId;
+            if (!file || !planeacionId) return;
+
+            if (typeof ExcelExport !== 'undefined' && ExcelExport.importarExcel) {
+                await ExcelExport.importarExcel(planeacionId, file);
+                e.target.value = ''; // Limpiar el input
+            } else {
+                showToast('El módulo de Excel no está disponible.', 'error');
+            }
+        });
+    }
+
+    const btnImportNewPlan = document.getElementById('btn-import-new-plan');
+    const importNewPlanFile = document.getElementById('import-new-plan-file');
+    if (btnImportNewPlan && importNewPlanFile) {
+        btnImportNewPlan.addEventListener('click', () => importNewPlanFile.click());
+        importNewPlanFile.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                const cycles = dbQuery("SELECT id FROM school_cycles ORDER BY start_date DESC LIMIT 1");
+                if (!cycles.length) {
+                    showToast('Primero debes crear al menos un ciclo escolar en la pestaña Ciclos.', 'error');
+                    return;
+                }
+                const cycleId = cycles[0].id;
+                const filename = file.name.replace('.xlsx', '');
+                const schedule = {"1":1, "2":1, "3":1, "4":1, "5":0};
+
+                const newId = await dbRun(
+                    `INSERT INTO planeaciones(cycle_id, disciplina, grado, weekly_hours, schedule, total_pdas) VALUES(?,?,?,?,?,?)`,
+                    [cycleId, filename, 1, 4, JSON.stringify(schedule), 1]
+                );
+
+                if (typeof ExcelExport !== 'undefined' && ExcelExport.importarExcel) {
+                    await ExcelExport.importarExcel(newId, file);
+                }
+            } catch(err) {
+                console.error(err);
+                showToast('Error al importar la plantilla: ' + err.message, 'error');
+            } finally {
+                e.target.value = '';
+            }
+        });
+    }
+
     const pdasTbody = document.getElementById('pdas-tbody');
     if (pdasTbody) {
         pdasTbody.addEventListener('input', () => markAsUnsaved('planner-btn-save'));
@@ -579,7 +682,6 @@ function initPlanCRUD() {
 
     const editPlanForm = document.getElementById('edit-plan-form');
     if (editPlanForm) {
-        editPlanForm.addEventListener('submit', handleEditPlanSubmit);
         editPlanForm.addEventListener('input', () => markAsUnsaved('edit-plan-submit-btn'));
     }
     const newPlanBtn = document.getElementById('btn-new-planification');
@@ -645,7 +747,8 @@ function initPlanCRUD() {
         });
     }
 
-    editForm.addEventListener('submit', async (e) => {
+    if (editPlanForm) {
+        editPlanForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const planIdVal = document.getElementById('edit-plan-id').value;
@@ -733,6 +836,7 @@ function initPlanCRUD() {
             showToast('Error al guardar planeación: ' + err.message, 'error');
         }
     });
+    } // Cierra el if(editPlanForm)
 }
 
 function renderPlaneacionesList() {
@@ -770,6 +874,7 @@ function renderPlaneacionesList() {
             <td style="text-align: right;">
                 <div style="display:inline-flex; gap:6px;">
                     <button class="btn btn-primary btn-sm btn-open-planner">⚡ Planear</button>
+                    <button class="btn btn-success btn-sm btn-import-excel" title="Importar Excel">📤</button>
                     <button class="btn btn-secondary btn-sm btn-edit-params">✏️</button>
                     <button class="btn btn-danger btn-sm btn-delete-plan">🗑️</button>
                 </div>
@@ -797,6 +902,12 @@ function renderPlaneacionesList() {
                     showToast('Error al eliminar: ' + err.message, 'error');
                 }
             }
+        });
+
+        tr.querySelector('.btn-import-excel').addEventListener('click', () => {
+            const input = document.getElementById('import-excel-file');
+            input.dataset.planeacionId = p.id; // Guardamos el id al que se va a importar
+            input.click();
         });
 
         tbody.appendChild(tr);
@@ -1746,10 +1857,18 @@ document.getElementById('pda-detail-form').addEventListener('submit', (e) => {
 
 async function generateWithGeminiAI() {
     if (!currentPdaDetailRow || !activePlaneacionId) return;
+    let apiKey = '';
+    try {
+        const keyRes = await fetch('llave_api.md');
+        if (keyRes.ok) {
+            apiKey = (await keyRes.text()).trim();
+        }
+    } catch (e) {
+        console.error('Error al leer llave_api.md', e);
+    }
 
-    const apiKey = localStorage.getItem('gemini_api_key');
     if (!apiKey) {
-        showToast('Falta API Key. Cárgala recargando la página.', 'error');
+        showToast('No se encontró la API Key en llave_api.md.', 'error');
         return;
     }
 
@@ -1792,7 +1911,7 @@ Debes responder ESTRICTAMENTE con un objeto JSON válido con la siguiente estruc
 }`;
 
     try {
-        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=' + apiKey, {
+        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=' + apiKey, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

@@ -216,7 +216,13 @@
                 <div
                     style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
                     <h2>Mis Planeaciones</h2>
-                    <button id="btn-new-planification" class="btn btn-primary">➕ Nueva Planeación</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="btn-download-template" class="btn btn-secondary">📥 Descargar Plantilla</button>
+                        <button id="btn-import-new-plan" class="btn btn-success">📤 Importar Plantilla</button>
+                        <button id="btn-new-planification" class="btn btn-primary">➕ Nueva Planeación</button>
+                        <input type="file" id="import-excel-file" accept=".xlsx" style="display: none;">
+                        <input type="file" id="import-new-plan-file" accept=".xlsx" style="display: none;">
+                    </div>
                 </div>
                 <p class="subtitle">Listado de planeaciones configuradas. Puedes editar sus parámetros, cargar su
                     tabla de PDAs o exportarlas directamente.</p>
@@ -428,6 +434,37 @@
                             seleccionado</span>
                     </div>
                 </div>
+
+                <!-- Configuración API -->
+                <div style="margin-top: 24px; border: 1px solid var(--border-color); padding: 24px; border-radius: var(--radius-lg);">
+                    <h4>Conexión con Inteligencia Artificial</h4>
+                    <p class="subtitle" style="font-size: 0.85rem; margin-bottom: 20px;">Configura tu clave de API de Gemini para habilitar la generación automática de planeaciones (IA).</p>
+                    <!-- API Key section removed to hardcode it in llave_api.md -->
+                    <div style="display: none;">
+                        <label class="form-label">API Key de Gemini</label>
+                        <input type="password" id="config-gemini-api-key" class="form-control" placeholder="AIzaSy...">
+                        <small style="color:var(--text-secondary); display:block; margin-top:5px; margin-bottom:10px;">La llave se obtiene desde llave_api.md</small>
+                        <button id="btn-save-api-key" class="btn btn-primary" onclick="saveApiKey()">💾 Guardar API Key</button>
+                    </div>
+                </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const apiKeyInput = document.getElementById('config-gemini-api-key');
+                        const savedKey = localStorage.getItem('gemini_api_key');
+                        if (savedKey) apiKeyInput.value = savedKey;
+                    });
+                    function saveApiKey() {
+                        const key = document.getElementById('config-gemini-api-key').value.trim();
+                        if (key) {
+                            localStorage.setItem('gemini_api_key', key);
+                            showToast('API Key guardada exitosamente.', 'success');
+                        } else {
+                            localStorage.removeItem('gemini_api_key');
+                            showToast('API Key eliminada.', 'success');
+                        }
+                    }
+                </script>
 
                 <div
                     style="margin-top: 32px; border-top: 1px solid var(--border-color); padding-top: 24px; text-align: right;">
@@ -680,12 +717,13 @@
 
     <!-- Cargar Scripts de la Aplicación -->
     <script src="https://unpkg.com/html-docx-js@0.3.1/dist/html-docx.js"></script>
-    <script src="js/pda_data.js"></script>
-    <script src="js/db.js"></script>
-    <script src="js/excel.js"></script>
-    <script src="js/cronograma.js"></script>
-    <script src="js/exportDoc.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/pda_data.js?v=2"></script>
+    <script src="js/db.js?v=2"></script>
+    <script src="js/excel.js?v=3"></script>
+    <script src="js/cronograma.js?v=2"></script>
+    <script src="js/exportDoc.js?v=2"></script>
+    <script src="js/app.js?v=7"></script>
+    <script src="js/resizer.js?v=2"></script>
 </body>
 
 </html>

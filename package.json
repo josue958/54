@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "exceljs": "^4.4.0"
+    "exceljs": "^4.4.0",
+    "jsdom": "^29.1.1"
   }
 }

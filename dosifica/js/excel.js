@@ -131,6 +131,83 @@ const ExcelExport = (() => {
         }
     }
 
-    return { exportarCronograma };
+    function descargarPlantilla() {
+        try {
+            const link = document.createElement('a');
+            link.href = 'assets/template.xlsx';
+            link.download = "Plantilla-Planeacion-NEM.xlsx";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('Plantilla descargada.', 'success');
+        } catch (e) {
+            console.error(e);
+            showToast('Error al descargar la plantilla.', 'error');
+        }
+    }
+
+    async function importarExcel(planeacionId, file) {
+        try {
+            showToast('Leyendo archivo Excel...', 'info');
+            const arrayBuffer = await file.arrayBuffer();
+            const workbook = new ExcelJS.Workbook();
+            await workbook.xlsx.load(arrayBuffer);
+            const ws = workbook.worksheets[0];
+
+            if (!ws) throw new Error("El archivo no contiene hojas de cálculo.");
+
+            let pdaCount = 0;
+            // Primero borramos los PDAs actuales para reemplazarlos
+            await window.dbRun("DELETE FROM planeacion_pdas WHERE planeacion_id = ?", [planeacionId]);
+
+            // Leer a partir de la fila 4
+            for (let r = 4; r <= 100; r++) {
+                const row = ws.getRow(r);
+                const pdaNum = row.getCell(2).value;
+                if (!pdaNum) continue; // Si no hay número de PDA, asumimos que está vacía
+
+                const contenido = (row.getCell(1).value || '').toString().trim();
+                const topic = (row.getCell(3).value || '').toString().trim();
+                const temas = (row.getCell(4).value || '').toString().trim();
+                const sessionsCount = parseInt(row.getCell(5).value) || 0;
+                const verbo = (row.getCell(6).value || '').toString().trim();
+                const complejidad = (row.getCell(7).value || '').toString().trim();
+                const rango = (row.getCell(8).value || '').toString().trim();
+                const formatDateValue = (cellValue) => {
+                    if (!cellValue) return '';
+                    if (cellValue instanceof Date) {
+                        return `${cellValue.getFullYear()}-${String(cellValue.getMonth()+1).padStart(2, '0')}-${String(cellValue.getDate()).padStart(2, '0')}`;
+                    }
+                    const str = cellValue.toString().trim();
+                    if (str.includes('T')) return str.split('T')[0];
+                    return str;
+                };
+
+                const start = formatDateValue(row.getCell(9).value);
+                const end = formatDateValue(row.getCell(10).value);
+
+                await window.dbRun(
+                    `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count, contenido, temas, complejidad, rango_sugerido, start_date, end_date) VALUES(?,?,?,?,?,?,?,?,?,?,?)`,
+                    [planeacionId, pdaNum, topic, verbo, sessionsCount, contenido, temas, complejidad, rango, start, end]
+                );
+                pdaCount++;
+            }
+
+            // Actualizar el conteo en la tabla principal
+            await window.dbRun("UPDATE planeaciones SET total_pdas = ? WHERE id = ?", [pdaCount, planeacionId]);
+            showToast(`Importación completada: ${pdaCount} PDAs cargados.`, 'success');
+            
+            // Recargar la lista
+            if (typeof window.renderPlaneacionesList === 'function') {
+                window.renderPlaneacionesList();
+            }
+
+        } catch (e) {
+            console.error("Error al importar Excel:", e);
+            showToast('Error al importar Excel: ' + e.message, 'error');
+        }
+    }
+
+    return { exportarCronograma, descargarPlantilla, importarExcel };
 })();
 
