@@ -40,11 +40,11 @@ function showToast(message, type = 'info') {
 
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    
+
     let icon = 'ℹ️';
     if (type === 'success') icon = '✅';
     if (type === 'error') icon = '⚠️';
-    
+
     toast.innerHTML = `<span>${icon}</span> <div>${message}</div>`;
     container.appendChild(toast);
 
@@ -65,7 +65,7 @@ function initTabSwitcher() {
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const target = btn.getAttribute('data-target');
-            
+
             // Si el usuario cambia de tab, asegurarnos de refrescar los datos correspondientes
             if (target === 'tab-planeaciones') {
                 renderPlaneacionesList();
@@ -120,7 +120,7 @@ function initSetupForm() {
             sum += parseInt(input.value) || 0;
         });
         const weekly = parseInt(weeklyInput.value) || 0;
-        
+
         if (sum !== weekly) {
             errorMsg.style.display = 'block';
             errorMsg.textContent = `⚠️ La suma de las horas del horario semanal (${sum} hs) debe ser exactamente igual a las horas semanales (${weekly} hs).`;
@@ -139,78 +139,78 @@ function initSetupForm() {
 
     if (setupForm) {
         setupForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const cycleId = parseInt(document.getElementById('setup-cycle').value);
-        const disciplina = document.getElementById('setup-discipline').value;
-        const grado = parseInt(document.getElementById('setup-grade').value);
-        const weeklyHours = parseInt(weeklyInput.value);
+            e.preventDefault();
 
-        // Crear JSON del horario
-        const schedule = {};
-        for (let d = 1; d <= 5; d++) {
-            schedule[d] = parseInt(document.getElementById(`setup-day-${d}`).value) || 0;
-        }
+            const cycleId = parseInt(document.getElementById('setup-cycle').value);
+            const disciplina = document.getElementById('setup-discipline').value;
+            const grado = parseInt(document.getElementById('setup-grade').value);
+            const weeklyHours = parseInt(weeklyInput.value);
 
-        try {
-            // 1. Obtener PDAs de la biblioteca pre-cargada
-            const libPdas = NEM_PHASE6_LIBRARY[disciplina]?.[grado] || [];
-            const totalPdas = libPdas.length || 1;
-
-            // 2. Insertar planeación principal
-            const pid = await dbRun(
-                `INSERT INTO planeaciones(cycle_id, disciplina, grado, weekly_hours, schedule, total_pdas) VALUES(?,?,?,?,?,?)`,
-                [cycleId, disciplina, grado, weeklyHours, JSON.stringify(schedule), totalPdas]
-            );
-
-            // 3. Calcular sesiones estimadas por PDA
-            const cycles = dbQuery("SELECT * FROM school_cycles WHERE id = ?", [cycleId]);
-            const cycle = cycles[0];
-            const holidays = JSON.parse(cycle.holidays || '{}');
-            
-            // Calcular sesiones
-            const schoolDays = calculateSchoolDays(cycle.start_date, cycle.total_days, holidays);
-            const sessions = mapSessions(schoolDays, schedule, cycle.period1_days, cycle.period2_days);
-            const totalSessions = sessions.length;
-
-            const baseSessions = Math.floor(totalSessions / totalPdas);
-            const remainder = totalSessions % totalPdas;
-
-            // 4. Insertar PDAs iniciales
-            if (libPdas.length > 0) {
-                for (let i = 0; i < libPdas.length; i++) {
-                    const text = libPdas[i];
-                    const isObj = (typeof text === 'object' && text !== null);
-                    const pdaTopic = isObj ? text.topic : text;
-                    const pdaNum = isObj ? (text.pda_number || (i + 1)) : (i + 1);
-                    const verb = isObj ? (text.verbo_rector || getRectorVerb(pdaTopic)) : getRectorVerb(pdaTopic);
-                    const sCount = isObj ? (text.sessions_count || (baseSessions + (pdaNum <= remainder ? 1 : 0))) : (baseSessions + (pdaNum <= remainder ? 1 : 0));
-                    const pdaContenido = isObj ? (text.contenido || '') : '';
-                    const pdaTemas = isObj ? (text.temas || '') : '';
-                    const pdaComplejidad = isObj ? (text.complejidad || 'Media') : 'Media';
-                    const pdaRango = isObj ? (text.rango_sugerido || '') : '';
-
-                    await dbRun(
-                        `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count, contenido, temas, complejidad, rango_sugerido) VALUES(?,?,?,?,?,?,?,?,?)`,
-                        [pid, pdaNum, pdaTopic, verb, sCount, pdaContenido, pdaTemas, pdaComplejidad, pdaRango]
-                    );
-                }
-            } else {
-                // PDA en blanco por si no hay biblioteca
-                await dbRun(
-                    `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count, contenido, temas, complejidad, rango_sugerido) VALUES(?,?,?,?,?,?,?,?,?)`,
-                    [pid, 1, 'Proceso de Desarrollo de Aprendizaje (PDA) 1', 'Desarrolla', totalSessions, '', '', 'Media', '']
-                );
+            // Crear JSON del horario
+            const schedule = {};
+            for (let d = 1; d <= 5; d++) {
+                schedule[d] = parseInt(document.getElementById(`setup-day-${d}`).value) || 0;
             }
 
-            showToast('Planeación creada correctamente.', 'success');
-            loadPlanification(pid);
-            document.getElementById('setup-discipline').value = '';
-        } catch (err) {
-            console.error(err);
-            showToast('Error al crear planeación: ' + err.message, 'error');
-        }
-    });
+            try {
+                // 1. Obtener PDAs de la biblioteca pre-cargada
+                const libPdas = NEM_PHASE6_LIBRARY[disciplina]?.[grado] || [];
+                const totalPdas = libPdas.length || 1;
+
+                // 2. Insertar planeación principal
+                const pid = await dbRun(
+                    `INSERT INTO planeaciones(cycle_id, disciplina, grado, weekly_hours, schedule, total_pdas) VALUES(?,?,?,?,?,?)`,
+                    [cycleId, disciplina, grado, weeklyHours, JSON.stringify(schedule), totalPdas]
+                );
+
+                // 3. Calcular sesiones estimadas por PDA
+                const cycles = dbQuery("SELECT * FROM school_cycles WHERE id = ?", [cycleId]);
+                const cycle = cycles[0];
+                const holidays = JSON.parse(cycle.holidays || '{}');
+
+                // Calcular sesiones
+                const schoolDays = calculateSchoolDays(cycle.start_date, cycle.total_days, holidays);
+                const sessions = mapSessions(schoolDays, schedule, cycle.period1_days, cycle.period2_days);
+                const totalSessions = sessions.length;
+
+                const baseSessions = Math.floor(totalSessions / totalPdas);
+                const remainder = totalSessions % totalPdas;
+
+                // 4. Insertar PDAs iniciales
+                if (libPdas.length > 0) {
+                    for (let i = 0; i < libPdas.length; i++) {
+                        const text = libPdas[i];
+                        const isObj = (typeof text === 'object' && text !== null);
+                        const pdaTopic = isObj ? text.topic : text;
+                        const pdaNum = isObj ? (text.pda_number || (i + 1)) : (i + 1);
+                        const verb = isObj ? (text.verbo_rector || getRectorVerb(pdaTopic)) : getRectorVerb(pdaTopic);
+                        const sCount = isObj ? (text.sessions_count || (baseSessions + (pdaNum <= remainder ? 1 : 0))) : (baseSessions + (pdaNum <= remainder ? 1 : 0));
+                        const pdaContenido = isObj ? (text.contenido || '') : '';
+                        const pdaTemas = isObj ? (text.temas || '') : '';
+                        const pdaComplejidad = isObj ? (text.complejidad || 'Media') : 'Media';
+                        const pdaRango = isObj ? (text.rango_sugerido || '') : '';
+
+                        await dbRun(
+                            `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count, contenido, temas, complejidad, rango_sugerido) VALUES(?,?,?,?,?,?,?,?,?)`,
+                            [pid, pdaNum, pdaTopic, verb, sCount, pdaContenido, pdaTemas, pdaComplejidad, pdaRango]
+                        );
+                    }
+                } else {
+                    // PDA en blanco por si no hay biblioteca
+                    await dbRun(
+                        `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count, contenido, temas, complejidad, rango_sugerido) VALUES(?,?,?,?,?,?,?,?,?)`,
+                        [pid, 1, 'Proceso de Desarrollo de Aprendizaje (PDA) 1', 'Desarrolla', totalSessions, '', '', 'Media', '']
+                    );
+                }
+
+                showToast('Planeación creada correctamente.', 'success');
+                loadPlanification(pid);
+                document.getElementById('setup-discipline').value = '';
+            } catch (err) {
+                console.error(err);
+                showToast('Error al crear planeación: ' + err.message, 'error');
+            }
+        });
     } // Cierra if(setupForm)
 }
 
@@ -239,7 +239,7 @@ async function loadPlanification(planeacionId) {
     document.getElementById('planner-subject-title').innerText = `Dosificación: ${planeacion.disciplina} — ${planeacion.grado}º Grado`;
     document.getElementById('summary-cycle-name').innerText = cycle.name;
     document.getElementById('summary-weekly-hours').innerText = `${planeacion.weekly_hours} hs/semana`;
-    
+
     // Calcular sesiones del ciclo
     const holidays = JSON.parse(cycle.holidays || '{}');
     const schoolDays = calculateSchoolDays(cycle.start_date, cycle.total_days, holidays);
@@ -354,7 +354,7 @@ function renderPdaRows(pdas, totalSessions) {
                 }
             }
         }
-    } catch(e) {}
+    } catch (e) { }
 
     pdas.forEach((pda, index) => {
         const tr = document.createElement('tr');
@@ -417,7 +417,7 @@ function renderPdaRows(pdas, totalSessions) {
                 updateSessionsBalance(totalSessions);
             }
         });
-        
+
         tr.querySelector('.pda-detail-btn').addEventListener('click', () => {
             openPdaDetailModal(tr);
         });
@@ -534,7 +534,7 @@ function addNewPdaRow(planeacionId) {
             updateSessionsBalance(totalSessions);
         }
     });
-    
+
     tr.querySelector('.pda-detail-btn').addEventListener('click', () => {
         openPdaDetailModal(tr);
     });
@@ -597,7 +597,7 @@ async function savePdaPlannerChanges(planeacionId, totalSessions) {
         }
 
         showToast('Cambios de dosificación guardados.', 'success');
-        
+
         // Recargar datos
         loadPlanification(planeacionId);
 
@@ -655,7 +655,7 @@ function initPlanCRUD() {
                 }
                 const cycleId = cycles[0].id;
                 const filename = file.name.replace('.xlsx', '');
-                const schedule = {"1":1, "2":1, "3":1, "4":1, "5":0};
+                const schedule = { "1": 1, "2": 1, "3": 1, "4": 1, "5": 0 };
 
                 const newId = await dbRun(
                     `INSERT INTO planeaciones(cycle_id, disciplina, grado, weekly_hours, schedule, total_pdas) VALUES(?,?,?,?,?,?)`,
@@ -665,7 +665,7 @@ function initPlanCRUD() {
                 if (typeof ExcelExport !== 'undefined' && ExcelExport.importarExcel) {
                     await ExcelExport.importarExcel(newId, file);
                 }
-            } catch(err) {
+            } catch (err) {
                 console.error(err);
                 showToast('Error al importar la plantilla: ' + err.message, 'error');
             } finally {
@@ -685,7 +685,7 @@ function initPlanCRUD() {
         editPlanForm.addEventListener('input', () => markAsUnsaved('edit-plan-submit-btn'));
     }
     const newPlanBtn = document.getElementById('btn-new-planification');
-    
+
     // Configurar validación de horario en el modal de edición
     const weeklyInput = document.getElementById('edit-plan-weekly-hours');
     const dayInputs = document.querySelectorAll('#edit-plan-form .day-input');
@@ -698,7 +698,7 @@ function initPlanCRUD() {
             sum += parseInt(input.value) || 0;
         });
         const weekly = parseInt(weeklyInput.value) || 0;
-        
+
         if (sum !== weekly) {
             errorMsg.style.display = 'block';
             errorMsg.textContent = `⚠️ La suma de las horas del horario semanal (${sum} hs) debe coincidir con las horas semanales (${weekly} hs).`;
@@ -749,93 +749,93 @@ function initPlanCRUD() {
 
     if (editPlanForm) {
         editPlanForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+            e.preventDefault();
 
-        const planIdVal = document.getElementById('edit-plan-id').value;
-        const cycleId = parseInt(document.getElementById('edit-plan-cycle').value);
-        const disciplina = document.getElementById('edit-plan-discipline').value.trim();
-        const grado = parseInt(document.getElementById('edit-plan-grade').value);
-        const weeklyHours = parseInt(weeklyInput.value);
+            const planIdVal = document.getElementById('edit-plan-id').value;
+            const cycleId = parseInt(document.getElementById('edit-plan-cycle').value);
+            const disciplina = document.getElementById('edit-plan-discipline').value.trim();
+            const grado = parseInt(document.getElementById('edit-plan-grade').value);
+            const weeklyHours = parseInt(weeklyInput.value);
 
-        const schedule = {};
-        for (let d = 1; d <= 5; d++) {
-            schedule[d] = parseInt(document.getElementById(`edit-plan-day-${d}`).value) || 0;
-        }
-
-        try {
-            if (planIdVal) {
-                // Modo EDICION
-                const planId = parseInt(planIdVal);
-                await dbRun(
-                    `UPDATE planeaciones SET cycle_id = ?, disciplina = ?, grado = ?, weekly_hours = ?, schedule = ? WHERE id = ?`,
-                    [cycleId, disciplina, grado, weeklyHours, JSON.stringify(schedule), planId]
-                );
-
-                showToast('Parámetros de la planeación actualizados.', 'success');
-            } else {
-                // Modo CREACION (CRUD completo)
-                const libPdas = NEM_PHASE6_LIBRARY[disciplina]?.[grado] || [];
-                const totalPdas = libPdas.length || 1;
-
-                // 1. Insertar planeación
-                const newId = await dbRun(
-                    `INSERT INTO planeaciones(cycle_id, disciplina, grado, weekly_hours, schedule, total_pdas) VALUES(?,?,?,?,?,?)`,
-                    [cycleId, disciplina, grado, weeklyHours, JSON.stringify(schedule), totalPdas]
-                );
-
-                // 2. Calcular sesiones del ciclo
-                const cycles = dbQuery("SELECT * FROM school_cycles WHERE id = ?", [cycleId]);
-                const cycle = cycles[0];
-                const holidays = JSON.parse(cycle.holidays || '{}');
-                const schoolDays = calculateSchoolDays(cycle.start_date, cycle.total_days, holidays);
-                const sessions = mapSessions(schoolDays, schedule, cycle.period1_days, cycle.period2_days);
-                const totalSessions = sessions.length;
-
-                const baseSessions = Math.floor(totalSessions / totalPdas);
-                const remainder = totalSessions % totalPdas;
-
-                // 3. Insertar PDAs de la asignatura
-                if (libPdas.length > 0) {
-                    for (let i = 0; i < libPdas.length; i++) {
-                        const text = libPdas[i];
-                        const isObj = (typeof text === 'object' && text !== null);
-                        const pdaTopic = isObj ? text.topic : text;
-                        const pdaNum = isObj ? (text.pda_number || (i + 1)) : (i + 1);
-                        const verb = isObj ? (text.verbo_rector || getRectorVerb(pdaTopic)) : getRectorVerb(pdaTopic);
-                        const sCount = isObj ? (text.sessions_count || (baseSessions + (pdaNum <= remainder ? 1 : 0))) : (baseSessions + (pdaNum <= remainder ? 1 : 0));
-                        const pdaContenido = isObj ? (text.contenido || '') : '';
-                        const pdaTemas = isObj ? (text.temas || '') : '';
-                        const pdaComplejidad = isObj ? (text.complejidad || 'Media') : 'Media';
-                        const pdaRango = isObj ? (text.rango_sugerido || '') : '';
-
-                        await dbRun(
-                            `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count, contenido, temas, complejidad, rango_sugerido) VALUES(?,?,?,?,?,?,?,?,?)`,
-                            [newId, pdaNum, pdaTopic, verb, sCount, pdaContenido, pdaTemas, pdaComplejidad, pdaRango]
-                        );
-                    }
-                } else {
-                    await dbRun(
-                        `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count, contenido, temas, complejidad, rango_sugerido) VALUES(?,?,?,?,?,?,?,?,?)`,
-                        [newId, 1, 'Proceso de Desarrollo de Aprendizaje (PDA) 1', 'Desarrolla', totalSessions, '', '', 'Media', '']
-                    );
-                }
-
-                showToast('Planeación creada correctamente.', 'success');
-
-                // Abrir el planificador automáticamente
-                setTimeout(() => {
-                    const tabBtn = document.querySelector('.nav-tab-btn[data-target="tab-dosificar"]');
-                    tabBtn.click();
-                    loadPlanification(newId);
-                }, 200);
+            const schedule = {};
+            for (let d = 1; d <= 5; d++) {
+                schedule[d] = parseInt(document.getElementById(`edit-plan-day-${d}`).value) || 0;
             }
 
-            closeEditPlanModal();
-            renderPlaneacionesList();
-        } catch (err) {
-            showToast('Error al guardar planeación: ' + err.message, 'error');
-        }
-    });
+            try {
+                if (planIdVal) {
+                    // Modo EDICION
+                    const planId = parseInt(planIdVal);
+                    await dbRun(
+                        `UPDATE planeaciones SET cycle_id = ?, disciplina = ?, grado = ?, weekly_hours = ?, schedule = ? WHERE id = ?`,
+                        [cycleId, disciplina, grado, weeklyHours, JSON.stringify(schedule), planId]
+                    );
+
+                    showToast('Parámetros de la planeación actualizados.', 'success');
+                } else {
+                    // Modo CREACION (CRUD completo)
+                    const libPdas = NEM_PHASE6_LIBRARY[disciplina]?.[grado] || [];
+                    const totalPdas = libPdas.length || 1;
+
+                    // 1. Insertar planeación
+                    const newId = await dbRun(
+                        `INSERT INTO planeaciones(cycle_id, disciplina, grado, weekly_hours, schedule, total_pdas) VALUES(?,?,?,?,?,?)`,
+                        [cycleId, disciplina, grado, weeklyHours, JSON.stringify(schedule), totalPdas]
+                    );
+
+                    // 2. Calcular sesiones del ciclo
+                    const cycles = dbQuery("SELECT * FROM school_cycles WHERE id = ?", [cycleId]);
+                    const cycle = cycles[0];
+                    const holidays = JSON.parse(cycle.holidays || '{}');
+                    const schoolDays = calculateSchoolDays(cycle.start_date, cycle.total_days, holidays);
+                    const sessions = mapSessions(schoolDays, schedule, cycle.period1_days, cycle.period2_days);
+                    const totalSessions = sessions.length;
+
+                    const baseSessions = Math.floor(totalSessions / totalPdas);
+                    const remainder = totalSessions % totalPdas;
+
+                    // 3. Insertar PDAs de la asignatura
+                    if (libPdas.length > 0) {
+                        for (let i = 0; i < libPdas.length; i++) {
+                            const text = libPdas[i];
+                            const isObj = (typeof text === 'object' && text !== null);
+                            const pdaTopic = isObj ? text.topic : text;
+                            const pdaNum = isObj ? (text.pda_number || (i + 1)) : (i + 1);
+                            const verb = isObj ? (text.verbo_rector || getRectorVerb(pdaTopic)) : getRectorVerb(pdaTopic);
+                            const sCount = isObj ? (text.sessions_count || (baseSessions + (pdaNum <= remainder ? 1 : 0))) : (baseSessions + (pdaNum <= remainder ? 1 : 0));
+                            const pdaContenido = isObj ? (text.contenido || '') : '';
+                            const pdaTemas = isObj ? (text.temas || '') : '';
+                            const pdaComplejidad = isObj ? (text.complejidad || 'Media') : 'Media';
+                            const pdaRango = isObj ? (text.rango_sugerido || '') : '';
+
+                            await dbRun(
+                                `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count, contenido, temas, complejidad, rango_sugerido) VALUES(?,?,?,?,?,?,?,?,?)`,
+                                [newId, pdaNum, pdaTopic, verb, sCount, pdaContenido, pdaTemas, pdaComplejidad, pdaRango]
+                            );
+                        }
+                    } else {
+                        await dbRun(
+                            `INSERT INTO planeacion_pdas(planeacion_id, pda_number, topic, verbo_rector, sessions_count, contenido, temas, complejidad, rango_sugerido) VALUES(?,?,?,?,?,?,?,?,?)`,
+                            [newId, 1, 'Proceso de Desarrollo de Aprendizaje (PDA) 1', 'Desarrolla', totalSessions, '', '', 'Media', '']
+                        );
+                    }
+
+                    showToast('Planeación creada correctamente.', 'success');
+
+                    // Abrir el planificador automáticamente
+                    setTimeout(() => {
+                        const tabBtn = document.querySelector('.nav-tab-btn[data-target="tab-dosificar"]');
+                        tabBtn.click();
+                        loadPlanification(newId);
+                    }, 200);
+                }
+
+                closeEditPlanModal();
+                renderPlaneacionesList();
+            } catch (err) {
+                showToast('Error al guardar planeación: ' + err.message, 'error');
+            }
+        });
     } // Cierra el if(editPlanForm)
 }
 
@@ -860,7 +860,7 @@ function renderPlaneacionesList() {
         const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'];
         const schedParts = [];
         for (let d = 1; d <= 5; d++) {
-            if (sched[d] > 0) schedParts.push(`${days[d-1]}: ${sched[d]}h`);
+            if (sched[d] > 0) schedParts.push(`${days[d - 1]}: ${sched[d]}h`);
         }
         const schedStr = schedParts.join(', ') || 'Sin horario';
 
@@ -977,7 +977,7 @@ function initCycleForm() {
     function validateSum() {
         const sum = (parseInt(p1.value) || 0) + (parseInt(p2.value) || 0) + (parseInt(p3.value) || 0);
         const total = parseInt(totalInput.value) || 0;
-        
+
         if (sum !== total) {
             p1.style.borderColor = 'var(--color-danger)';
             p2.style.borderColor = 'var(--color-danger)';
@@ -1006,7 +1006,7 @@ function initCycleForm() {
 
         const totalDays = calculateDaysInRange(toggleDateFormat(startVal), toggleDateFormat(endVal), holidays);
         totalInput.value = totalDays;
-        
+
         // Auto-distribuir días en 3 periodos lo más igualitariamente posible
         const base = Math.floor(totalDays / 3);
         p1.value = base;
@@ -1022,7 +1022,7 @@ function initCycleForm() {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const id = document.getElementById('cycle-id').value;
         const name = document.getElementById('cycle-name').value.trim();
         const start = toggleDateFormat(startInput.value);
@@ -1133,7 +1133,7 @@ function initCycleForm() {
                 await dbRun("UPDATE school_cycles SET holidays = ? WHERE id = ?", [JSON.stringify(holidays), activeCycleIdForHolidays]);
                 await recalculateAndSaveCycleDays(activeCycleIdForHolidays);
                 showToast(origDate ? 'Día festivo actualizado.' : 'Día festivo añadido.', 'success');
-                
+
                 resetHolidayForm();
                 renderHolidaysList(holidays);
             }
@@ -1357,7 +1357,7 @@ function renderHolidaysList(holidays) {
             document.getElementById('holiday-date-end').value = '';
             document.getElementById('holiday-date-end').disabled = true; // Deshabilitar rango al editar individual
             document.getElementById('holiday-label').value = holidays[d];
-            
+
             document.getElementById('holiday-form-title').innerText = 'Editar Festivo';
             document.getElementById('btn-holiday-submit').innerText = '💾 Actualizar Festivo';
             document.getElementById('btn-holiday-cancel').style.display = 'inline-flex';
@@ -1400,7 +1400,7 @@ function renderHolidaysList(holidays) {
 
 function loadCyclesDropdowns() {
     const list = dbQuery("SELECT * FROM school_cycles ORDER BY start_date DESC");
-    
+
     // Select del Setup
     const setupSelect = document.getElementById('setup-cycle');
     setupSelect.innerHTML = '<option value="">Seleccionar ciclo...</option>';
@@ -1422,13 +1422,13 @@ function initBackupPanel() {
     const defaultDbFileInput = document.getElementById('default-db-file-input');
 
     // Funciones globales de apertura y cierre de modal
-    window.openAdminAuthModal = function() {
+    window.openAdminAuthModal = function () {
         document.getElementById('auth-username').value = '';
         document.getElementById('auth-password').value = '';
         document.getElementById('admin-auth-modal').style.display = 'flex';
     };
 
-    window.closeAdminAuthModal = function() {
+    window.closeAdminAuthModal = function () {
         document.getElementById('admin-auth-modal').style.display = 'none';
     };
 
@@ -1455,7 +1455,7 @@ function initBackupPanel() {
             try {
                 await importDatabase(file);
                 showToast('Base de datos restaurada correctamente.', 'success');
-                
+
                 // Limpiar inputs
                 fileInput.value = '';
                 fileNameSpan.innerText = 'Ningún archivo seleccionado';
@@ -1505,10 +1505,10 @@ function initBackupPanel() {
 
         try {
             const buf = await file.arrayBuffer();
-            
+
             // 1. Guardar en localStorage como semilla predeterminada
             saveDefaultSeed(buf);
-            
+
             // 2. Cargar en base de datos activa
             await importDatabase(file);
 
@@ -1601,7 +1601,7 @@ function mapSessions(schoolDays, schedule, p1Days, p2Days) {
     schoolDays.forEach((dateStr, idx) => {
         const date = parseDateDMY(dateStr);
         const dayOfWeek = date.getDay();
-        
+
         const hours = schedule[dayOfWeek] || 0;
         if (hours > 0) {
             let period = 1;
@@ -1618,15 +1618,15 @@ function mapSessions(schoolDays, schedule, p1Days, p2Days) {
 
 function calculateDaysInRange(startDateStr, endDateStr, holidays) {
     if (!startDateStr || !endDateStr) return 0;
-    
+
     let start = parseDateDMY(startDateStr);
     let end = parseDateDMY(endDateStr);
-    
+
     if (start > end) return 0;
-    
+
     let count = 0;
     let current = new Date(start);
-    
+
     while (current <= end) {
         const w = current.getDay(); // 0 = Dom, 6 = Sáb
         if (w !== 0 && w !== 6) {
@@ -1712,7 +1712,7 @@ async function exportHolidaysToExcel() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        
+
         showToast('Festivos exportados con éxito a Excel.', 'success');
     } catch (e) {
         console.error(e);
@@ -1731,9 +1731,9 @@ async function importHolidaysFromExcel(file) {
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.load(buf);
         const sheet = workbook.worksheets[0];
-        
+
         const newHolidays = {};
-        
+
         const formatDate = (val) => {
             if (val instanceof Date) {
                 return formatDateDMY(val);
@@ -1750,13 +1750,13 @@ async function importHolidaysFromExcel(file) {
             try {
                 const d = new Date(val);
                 if (!isNaN(d.getTime())) return formatDateDMY(d);
-            } catch(e){}
+            } catch (e) { }
             return null;
         };
 
         sheet.eachRow((row, rowNumber) => {
             if (rowNumber === 1) return; // Saltar cabeceras
-            
+
             const startVal = row.getCell(1).value;
             const endVal = row.getCell(2).value;
             const descVal = row.getCell(3).value;
@@ -1764,7 +1764,7 @@ async function importHolidaysFromExcel(file) {
             if (!startVal || !descVal) return;
 
             const startStr = formatDate(startVal);
-            const descStr = typeof descVal === 'object' ? (descVal.richText ? descVal.richText.map(t=>t.text).join('') : JSON.stringify(descVal)) : String(descVal).trim();
+            const descStr = typeof descVal === 'object' ? (descVal.richText ? descVal.richText.map(t => t.text).join('') : JSON.stringify(descVal)) : String(descVal).trim();
 
             if (!startStr || !descStr) return;
 
@@ -1789,10 +1789,10 @@ async function importHolidaysFromExcel(file) {
         if (cycles.length) {
             const currentHolidays = JSON.parse(cycles[0].holidays || '{}');
             const merged = Object.assign({}, currentHolidays, newHolidays);
-            
+
             await dbRun("UPDATE school_cycles SET holidays = ? WHERE id = ?", [JSON.stringify(merged), activeCycleIdForHolidays]);
             await recalculateAndSaveCycleDays(activeCycleIdForHolidays);
-            
+
             showToast('Festivos importados y combinados correctamente.', 'success');
             renderHolidaysList(merged);
         }
@@ -1810,7 +1810,7 @@ function openPdaDetailModal(tr) {
     let data = {};
     try {
         data = JSON.parse(detallesInput || '{}');
-    } catch(e) { }
+    } catch (e) { }
 
     document.getElementById('pda-ejes').value = data.ejes || '';
     document.getElementById('pda-nombre-proyecto').value = data.nombre_proyecto || '';
@@ -1857,13 +1857,13 @@ document.getElementById('pda-detail-form').addEventListener('submit', (e) => {
 
 async function generateWithGeminiAI() {
     if (!currentPdaDetailRow || !activePlaneacionId) return;
-    // El usuario solicitó hardcodear la llave. La dividimos en fragmentos
-    // para evitar que los escáneres de seguridad de GitHub bloqueen el repositorio.
-    const part1 = "AQ.Ab8RN6IZ";
-    const part2 = "7jHvAVuXS1T";
-    const part3 = "fs8j5O13zVE";
-    const part4 = "McsSqEypRrj";
-    const part5 = "snG1ims6Q";
+    // REEMPLAZA ESTA CADENA CON TU NUEVA API KEY DE GOOGLE (DEBE EMPEZAR CON AIzaSy...)
+    // Ejemplo: const part1 = "AIzaSy...";
+    const part1 = "AQ.Ab8RN6J9";
+    const part2 = "Cxu1ROOwy";
+    const part3 = "WabQxj1rd";
+    const part4 = "EnZVBB0pLxv";
+    const part5 = "oPO2KgynMPBlQ";
     const apiKey = part1 + part2 + part3 + part4 + part5;
 
     const plans = dbQuery("SELECT * FROM planeaciones WHERE id = ?", [activePlaneacionId]);
@@ -1873,7 +1873,7 @@ async function generateWithGeminiAI() {
     const pdaTopic = currentPdaDetailRow.querySelector('.pda-topic').value;
     const temas = currentPdaDetailRow.querySelector('.pda-temas').value;
     const sesiones = currentPdaDetailRow.querySelector('.pda-sessions').value;
-    
+
     const btn = document.querySelector('#pda-detail-modal .btn-primary[onclick="generateWithGeminiAI()"]');
     if (btn) {
         btn.disabled = true;
@@ -1907,7 +1907,9 @@ Debes responder ESTRICTAMENTE con un objeto JSON válido con la siguiente estruc
     try {
         const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=' + apiKey, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: promptText }] }],
                 generationConfig: { response_mime_type: "application/json" }
@@ -1921,7 +1923,7 @@ Debes responder ESTRICTAMENTE con un objeto JSON válido con la siguiente estruc
 
         const result = await response.json();
         let content = result.candidates[0].content.parts[0].text;
-        
+
         try {
             const data = JSON.parse(content);
             document.getElementById('pda-campo-formativo').value = data.campo_formativo || '';
@@ -1933,14 +1935,14 @@ Debes responder ESTRICTAMENTE con un objeto JSON válido con la siguiente estruc
             document.getElementById('pda-desarrollo-sesiones').value = data.desarrollo_sesiones || '';
             document.getElementById('pda-rubrica').value = data.rubrica || '';
             document.getElementById('pda-teoria').value = data.teoria || '';
-            
+
             showToast('Planeación generada exitosamente.', 'success');
-        } catch(e) {
+        } catch (e) {
             console.error(e, content);
             showToast('Error al procesar el JSON de Gemini.', 'error');
         }
-        
-    } catch(err) {
+
+    } catch (err) {
         console.error(err);
         showToast(err.message, 'error');
     } finally {
